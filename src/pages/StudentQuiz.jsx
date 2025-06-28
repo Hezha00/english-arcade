@@ -8,6 +8,7 @@ import { supabase } from '../supabaseClient'
 import StudentAppWrapper from '../layouts/StudentAppWrapper'
 
 
+
 export default function StudentQuiz() {
     const { assignmentId } = useParams()
     const navigate = useNavigate()
