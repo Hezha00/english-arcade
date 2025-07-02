@@ -36,7 +36,6 @@ import TeacherAssignments from './pages/TeacherAssignments'
 import NewAssignmentForm from './pages/NewAssignmentForm'
 import TeacherDashboard from './pages/TeacherDashboard'
 
-
 // Layouts
 import TeacherLayout from './components/TeacherLayout'
 import ProtectedRoute from './ProtectedRoute'
@@ -46,7 +45,7 @@ import './index.css'
 const root = ReactDOM.createRoot(document.getElementById('root'))
 
 root.render(
-  <BrowserRouter>
+  <BrowserRouter basename="/english-arcade">
     <Routes>
       {/* 🔸 Public */}
       <Route path="/" element={<LandingScreen />} />
@@ -61,7 +60,7 @@ root.render(
       <Route path="/teacher-subscription" element={<TeacherSubscription />} />
       <Route path="/renew-subscription" element={<TeacherSubscription />} />
 
-      {/* 🧑‍🏫 Protected Teacher Dashboard Routes (Now consistent layout!) */}
+      {/* 🧑‍🏫 Protected Teacher Dashboard Routes */}
       <Route path="/dashboard" element={<ProtectedRoute><TeacherLayout><Dashboard /></TeacherLayout></ProtectedRoute>} />
       <Route path="/classrooms" element={<ProtectedRoute><TeacherLayout><Classrooms /></TeacherLayout></ProtectedRoute>} />
       <Route path="/classrooms/:className" element={<ProtectedRoute><TeacherLayout><ClassroomDetails /></TeacherLayout></ProtectedRoute>} />
@@ -84,6 +83,9 @@ root.render(
       <Route path="/admin-create-license" element={<AdminCreateLicense />} />
       <Route path="/admin-license-list" element={<AdminLicenseList />} />
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
+
+      {/* ⚠️ Wildcard fallback route for GitHub Pages routing */}
+      <Route path="*" element={<LandingScreen />} />
     </Routes>
   </BrowserRouter>
 )
