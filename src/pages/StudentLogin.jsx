@@ -16,9 +16,9 @@ export default function StudentLogin() {
     const handleLogin = async () => {
         setIsLoading(true)
         setMessage('')
+
         const email = `${username}@arcade.dev`
 
-        // 1️⃣ Authenticate using Supabase Auth (hidden email format)
         const { error: loginError } = await supabase.auth.signInWithPassword({
             email,
             password
@@ -30,16 +30,13 @@ export default function StudentLogin() {
             return
         }
 
-        // 2️⃣ Get current Auth user info
         const { data: { user } } = await supabase.auth.getUser()
-
         if (!user) {
             setMessage('ورود انجام نشد.')
             setIsLoading(false)
             return
         }
 
-        // 3️⃣ Fetch linked student row using auth.uid()
         const { data: student, error: studentError } = await supabase
             .from('students')
             .select('*')
@@ -47,12 +44,12 @@ export default function StudentLogin() {
             .single()
 
         if (studentError || !student) {
-            setMessage('اطلاعات کاربر یافت نشد.')
+            setMessage('اطلاعات دانش‌آموز یافت نشد.')
             setIsLoading(false)
             return
         }
 
-        // 4️⃣ Update login streak
+        // ✅ Update login streak
         const last = student.last_login ? new Date(student.last_login) : null
         const today = new Date()
         const isNewDay = !last || today.toDateString() !== last.toDateString()
@@ -70,7 +67,8 @@ export default function StudentLogin() {
 
         const updated = { ...student, login_streak: streak, last_login: now.toISOString() }
         localStorage.setItem('student', JSON.stringify(updated))
-        navigate('/student-assignments')
+
+        navigate('/student-dashboard') // ✅ REDIRECT TO DASHBOARD
         setIsLoading(false)
     }
 
@@ -121,7 +119,11 @@ export default function StudentLogin() {
                     onChange={(e) => setPassword(e.target.value)}
                 />
 
-                {message && <Alert severity="error" sx={{ mt: 2 }}>{message}</Alert>}
+                {message && (
+                    <Alert severity="error" sx={{ mt: 2 }}>
+                        {message}
+                    </Alert>
+                )}
 
                 <Button
                     variant="contained"

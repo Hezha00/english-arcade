@@ -4,13 +4,13 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  color: #fff;
+  background-color: #000;
 }
 
 a {
@@ -21,19 +21,6 @@ a {
 
 a:hover {
   color: #535bf2;
-}
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
 }
 
 button {
@@ -57,22 +44,7 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-
-  a:hover {
-    color: #747bff;
-  }
-
-  button {
-    background-color: #f9f9f9;
-  }
-}
-
-/* Reset & global defaults */
+/* 🌌 Recreated glowing background + centered layout */
 html,
 body,
 #root {
@@ -80,8 +52,20 @@ body,
   padding: 0;
   height: 100%;
   width: 100%;
-  font-family: "Vazirmatn", sans-serif;
-  background-color: #000;
-  /* Optional fallback behind bg.png */
   overflow-x: hidden;
+  font-family: "Vazirmatn", sans-serif;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    radial-gradient(at 20% 30%, rgba(255, 213, 170, 0.3) 0%, transparent 60%),
+    radial-gradient(at 80% 40%, rgba(173, 216, 230, 0.25) 0%, transparent 60%),
+    radial-gradient(at 50% 85%, rgba(171, 242, 181, 0.25) 0%, transparent 60%),
+    linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background-size: cover;
 }

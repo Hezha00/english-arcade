@@ -12,6 +12,7 @@ export default function CreateAssignment() {
     const [dueDate, setDueDate] = useState('')
     const [classrooms, setClassrooms] = useState([])
     const [selectedClassroom, setSelectedClassroom] = useState('')
+    const [maxAttempts, setMaxAttempts] = useState(1)
     const [message, setMessage] = useState('')
     const [error, setError] = useState(false)
 
@@ -21,15 +22,18 @@ export default function CreateAssignment() {
 
     const fetchClassrooms = async () => {
         const { data: user } = await supabase.auth.getUser()
-        const teacherId = user.user.id
+        const teacherId = user?.user?.id
 
         const { data, error } = await supabase
             .from('classrooms')
             .select('*')
             .eq('teacher_id', teacherId)
 
-        if (error) console.error(error)
-        else setClassrooms(data)
+        if (error) {
+            console.error('❌ خطا در دریافت کلاس‌ها:', error)
+        } else {
+            setClassrooms(data || [])
+        }
     }
 
     const handleSubmit = async () => {
@@ -39,17 +43,24 @@ export default function CreateAssignment() {
             return
         }
 
-        const { error } = await supabase.from('assignments').insert([
-            {
-                title,
-                description,
-                due_date: dueDate,
-                classroom: selectedClassroom
-            }
-        ])
+        const { data: userData } = await supabase.auth.getUser()
+        const teacherId = userData?.user?.id
+
+        const payload = {
+            title,
+            description: description || '',
+            deadline: dueDate || null,
+            classroom: selectedClassroom,
+            teacher_id: teacherId,
+            type: 'quiz',
+            max_attempts: Number(maxAttempts) || 1
+        }
+
+        const { error } = await supabase.from('assignments').insert([payload])
 
         if (error) {
-            setMessage('خطایی رخ داد.')
+            console.error('❌ Insert error:', error)
+            setMessage('خطایی در ثبت تمرین رخ داد.')
             setError(true)
         } else {
             setMessage('تمرین با موفقیت ایجاد شد ✅')
@@ -58,6 +69,7 @@ export default function CreateAssignment() {
             setDescription('')
             setDueDate('')
             setSelectedClassroom('')
+            setMaxAttempts(1)
         }
     }
 
@@ -111,6 +123,16 @@ export default function CreateAssignment() {
                         </Select>
                     </FormControl>
 
+                    <TextField
+                        label="حداکثر تلاش مجاز"
+                        fullWidth
+                        type="number"
+                        margin="normal"
+                        value={maxAttempts}
+                        onChange={(e) => setMaxAttempts(e.target.value)}
+                        inputProps={{ min: 1 }}
+                    />
+
                     {message && (
                         <Alert severity={error ? 'error' : 'success'} sx={{ mt: 2 }}>
                             {message}
@@ -127,3 +149,4 @@ export default function CreateAssignment() {
         </TeacherLayout>
     )
 }
+

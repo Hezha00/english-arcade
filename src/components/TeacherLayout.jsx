@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
     Box,
     Drawer,
@@ -9,15 +9,20 @@ import {
     ListItem,
     ListItemText,
     CssBaseline,
-    Divider
+    Divider,
+    IconButton,
+    Tooltip
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import MenuIcon from '@mui/icons-material/Menu'
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 
 const drawerWidth = 240
 
 export default function TeacherLayout({ children }) {
     const navigate = useNavigate()
+    const [drawerOpen, setDrawerOpen] = useState(true)
 
     const handleLogout = async () => {
         await supabase.auth.signOut()
@@ -25,30 +30,48 @@ export default function TeacherLayout({ children }) {
     }
 
     const menuItems = [
-        { label: 'کلاس‌ها', path: '/dashboard' },
-        { label: 'دانش‌آموزان', path: '/dashboard/students' },
-        { label: 'بازی‌ها', path: '/dashboard/games' },
-        { label: 'تکالیف', path: '/dashboard/assignments' },
-        { label: 'خروج', action: handleLogout }
+        { label: '🏠 داشبورد', path: '/dashboard' },
+        { label: '🏫 کلاس‌ها', path: '/classrooms' },
+        { label: '🎮 بازی‌ها', path: '/teacher-games' },
+        { label: '📘 تکالیف', path: '/teacher-assignments-list' },
+        { label: '⚙️ تنظیمات حساب', path: '/account-settings' },
+        { label: '🚪 خروج', action: handleLogout }
     ]
 
     return (
         <Box sx={{ display: 'flex', direction: 'rtl' }}>
             <CssBaseline />
+
             <AppBar position="fixed" sx={{ zIndex: 1201 }}>
-                <Toolbar>
-                    <Typography variant="h6" noWrap component="div">
-                        داشبورد معلم
+                <Toolbar sx={{ justifyContent: 'space-between' }}>
+                    <Typography variant="h6" noWrap>
+                        🎯 داشبورد معلم
                     </Typography>
+
+                    <Tooltip title={drawerOpen ? 'بستن منو' : 'نمایش منو'}>
+                        <IconButton
+                            color="inherit"
+                            edge="end"
+                            onClick={() => setDrawerOpen(!drawerOpen)}
+                        >
+                            {drawerOpen ? <ChevronRightIcon /> : <MenuIcon />}
+                        </IconButton>
+                    </Tooltip>
                 </Toolbar>
             </AppBar>
+
             <Drawer
-                variant="permanent"
+                variant="persistent"
                 anchor="right"
+                open={drawerOpen}
                 sx={{
                     width: drawerWidth,
                     flexShrink: 0,
-                    [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' }
+                    [`& .MuiDrawer-paper`]: {
+                        width: drawerWidth,
+                        boxSizing: 'border-box',
+                        transition: '0.3s ease-in-out'
+                    }
                 }}
             >
                 <Toolbar />
@@ -56,17 +79,23 @@ export default function TeacherLayout({ children }) {
                     <List>
                         {menuItems.map((item, index) => (
                             <ListItem
-                                button
                                 key={index}
-                                onClick={() => item.action ? item.action() : navigate(item.path)}
+                                button // ✅ shorthand for button={true}, safely supported by MUI
+                                onClick={() =>
+                                    item.action ? item.action() : navigate(item.path)
+                                }
                             >
-                                <ListItemText primary={item.label} sx={{ textAlign: 'right' }} />
+                                <ListItemText
+                                    primary={item.label}
+                                    sx={{ textAlign: 'right' }}
+                                />
                             </ListItem>
                         ))}
                     </List>
-                    <Divider />
                 </Box>
+                <Divider />
             </Drawer>
+
             <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
                 <Toolbar />
                 {children}

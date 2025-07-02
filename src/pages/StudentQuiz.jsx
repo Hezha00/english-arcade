@@ -7,8 +7,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import StudentAppWrapper from '../layouts/StudentAppWrapper'
 
-
-
 export default function StudentQuiz() {
     const { assignmentId } = useParams()
     const navigate = useNavigate()
@@ -19,8 +17,8 @@ export default function StudentQuiz() {
     const [score, setScore] = useState(0)
     const [student, setStudent] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [startTime, setStartTime] = useState(null)
 
-    // Feedback state
     const [feedbackRating, setFeedbackRating] = useState(null)
     const [feedbackText, setFeedbackText] = useState('')
     const [feedbackSent, setFeedbackSent] = useState(false)
@@ -32,20 +30,37 @@ export default function StudentQuiz() {
         } else {
             const parsed = JSON.parse(saved)
             setStudent(parsed)
-            fetchQuestions()
+            fetchQuestions(parsed)
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [navigate])
+    }, [navigate, assignmentId])
 
-
-    const fetchQuestions = async () => {
-        const { data } = await supabase
+    const fetchQuestions = async (studentData) => {
+        const { data: qData } = await supabase
             .from('questions')
             .select('*')
             .eq('assignment_id', assignmentId)
 
-        setQuestions(data || [])
+        setQuestions(qData || [])
         setLoading(false)
+
+        if (!qData || qData.length === 0) return
+
+        const { data: resultCheck } = await supabase
+            .from('results')
+            .select('*')
+            .eq('student_id', studentData.id)
+            .eq('assignment_id', assignmentId)
+            .maybeSingle()
+
+        if (!resultCheck) {
+            await supabase.from('results').insert([{
+                student_id: studentData.id,
+                assignment_id: assignmentId,
+                finished: false
+            }])
+        }
+
+        setStartTime(Date.now())
     }
 
     const handleAnswer = (value) => {
@@ -70,18 +85,18 @@ export default function StudentQuiz() {
             if (answers[idx] === q.correct_index) correct++
         })
 
-        await supabase.from('results').insert([
-            {
-                assignment_id: assignmentId,
-                student_id: student.id,
-                username: student.username,
-                classroom: student.classroom,
-                score: correct,
-                total: questions.length
-            }
-        ])
+        const endTime = Date.now()
+        const timeTakenSec = Math.floor((endTime - startTime) / 1000)
 
-        // Optional badge logic skipped for brevity here
+        await supabase.from('results')
+            .update({
+                finished: true,
+                score: correct,
+                time_taken: timeTakenSec
+            })
+            .eq('student_id', student.id)
+            .eq('assignment_id', assignmentId)
+
         const newTotal = (student.total_score || 0) + correct
         await supabase.from('students')
             .update({ total_score: newTotal })
@@ -101,19 +116,15 @@ export default function StudentQuiz() {
             return
         }
 
-        const { error } = await supabase.from('feedback').insert([
-            {
-                assignment_id: assignmentId,
-                student_id: student.id,
-                username: student.username,
-                rating: feedbackRating,
-                comment: feedbackText
-            }
-        ])
+        const { error } = await supabase.from('feedback').insert([{
+            assignment_id: assignmentId,
+            student_id: student.id,
+            username: student.username,
+            rating: feedbackRating,
+            comment: feedbackText
+        }])
 
-        if (!error) {
-            setFeedbackSent(true)
-        }
+        if (!error) setFeedbackSent(true)
     }
 
     if (loading) return <LinearProgress sx={{ mt: 10 }} />
@@ -154,12 +165,8 @@ export default function StudentQuiz() {
                 </RadioGroup>
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-                    <Button onClick={handlePrev} disabled={current === 0}>
-                        قبلی
-                    </Button>
-                    <Button onClick={handleNext} disabled={current === questions.length - 1}>
-                        بعدی
-                    </Button>
+                    <Button onClick={handlePrev} disabled={current === 0}>قبلی</Button>
+                    <Button onClick={handleNext} disabled={current === questions.length - 1}>بعدی</Button>
                 </Box>
 
                 {!submitted && current === questions.length - 1 && (
@@ -179,9 +186,7 @@ export default function StudentQuiz() {
                                 <Typography variant="subtitle1">بازخورد شما درباره این آزمون:</Typography>
                                 <Box sx={{ display: 'flex', gap: 1, my: 1 }}>
                                     {[1, 2, 3, 4, 5].map((r) => (
-                                        <Button key={r} onClick={() => setFeedbackRating(r)}>
-                                            {'⭐'.repeat(r)}
-                                        </Button>
+                                        <Button key={r} onClick={() => setFeedbackRating(r)}>{'⭐'.repeat(r)}</Button>
                                     ))}
                                 </Box>
                                 <TextField
@@ -192,11 +197,7 @@ export default function StudentQuiz() {
                                     value={feedbackText}
                                     onChange={(e) => setFeedbackText(e.target.value)}
                                 />
-                                <Button
-                                    variant="outlined"
-                                    sx={{ mt: 2 }}
-                                    onClick={handleSubmitFeedback}
-                                >
+                                <Button variant="outlined" sx={{ mt: 2 }} onClick={handleSubmitFeedback}>
                                     ثبت بازخورد
                                 </Button>
                             </Box>

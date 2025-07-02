@@ -1,7 +1,7 @@
 import React from 'react'
 import { AppBar, Toolbar, Typography, Box, Button } from '@mui/material'
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../supabaseClient'
+import { supabase } from './supabaseClient'
 
 export default function TeacherAppWrapper({ children }) {
     const navigate = useNavigate()
@@ -12,7 +12,14 @@ export default function TeacherAppWrapper({ children }) {
     }
 
     return (
-        <Box>
+        <Box
+            sx={{
+                minHeight: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                background: 'transparent' // let index.css gradient background show
+            }}
+        >
             <AppBar position="static" sx={{ bgcolor: '#0d47a1' }} dir="rtl">
                 <Toolbar sx={{ justifyContent: 'space-between' }}>
                     <Typography variant="h6">🎯 داشبورد معلم</Typography>
@@ -37,7 +44,7 @@ export default function TeacherAppWrapper({ children }) {
                 </Toolbar>
             </AppBar>
 
-            <Box>{children}</Box>
+            <Box sx={{ flex: 1, p: 2 }}>{children}</Box>
         </Box>
     )
 }

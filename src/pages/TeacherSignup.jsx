@@ -1,86 +1,132 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
-    Box, Paper, Typography, TextField, Button, Alert, CircularProgress
+  Box, Paper, Typography, TextField, Button, Alert, CircularProgress
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
 
 export default function TeacherSignup() {
-    const [email, setEmail] = useState('')
-    const [sent, setSent] = useState(false)
-    const [error, setError] = useState('')
-    const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [sent, setSent] = useState(false)
 
-    const handleSignup = async () => {
-        setLoading(true)
-        setError('')
-        setSent(false)
+  const [emailValid, setEmailValid] = useState(false)
+  const [emailTaken, setEmailTaken] = useState(false)
+  const [checkingEmail, setCheckingEmail] = useState(false)
 
-        const { error } = await supabase.auth.signUp({
-            email,
-            options: {
-                emailRedirectTo: 'http://localhost:5173/teacher-subscription'
-            }
-        })
-
-        if (error) {
-            setError('خطا در ارسال ایمیل. لطفاً دوباره تلاش کنید.')
-        } else {
-            setSent(true)
-        }
-
-        setLoading(false)
+  useEffect(() => {
+    if (!email) {
+      setEmailValid(false)
+      setEmailTaken(false)
+      return
     }
 
-    return (
-        <Box
-            sx={{
-                width: '100vw',
-                height: '100vh',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundImage: 'url("/bg.png")',
-                backgroundSize: 'cover'
-            }}
+    const timeout = setTimeout(async () => {
+      const normalized = email.trim().toLowerCase()
+      const isGmail = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i.test(normalized)
+      setEmailValid(isGmail)
+
+      if (!isGmail) {
+        setEmailTaken(false)
+        return
+      }
+
+      setCheckingEmail(true)
+      const { data, error } = await supabase.rpc('is_email_taken', {
+        email_input: normalized
+      })
+
+      if (error) {
+        console.error('❌ Error checking email:', error.message)
+      }
+
+      setEmailTaken(!!data)
+      setCheckingEmail(false)
+    }, 500)
+
+    return () => clearTimeout(timeout)
+  }, [email])
+
+  const handleSignup = async () => {
+    setLoading(true)
+    setError('')
+    setSent(false)
+
+    const normalizedEmail = email.trim().toLowerCase()
+
+    const { error: signErr } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password
+    })
+
+    if (signErr) {
+      console.error('❌ Signup failed:', signErr.message)
+      setError('ثبت‌نام انجام نشد. لطفاً اطلاعات وارد شده را بررسی کنید.')
+      setLoading(false)
+      return
+    }
+
+    setSent(true)
+    setLoading(false)
+  }
+
+  const buttonDisabled =
+    !email || !password || loading || !emailValid || emailTaken
+
+  return (
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <Paper dir="rtl" sx={{ p: 4, width: 400, borderRadius: 4, boxShadow: 4 }}>
+        <Typography variant="h5" fontWeight="bold" gutterBottom>
+          ✍️ ثبت‌نام معلم
+        </Typography>
+
+        <TextField
+          fullWidth
+          label="ایمیل (فقط Gmail)"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          error={!!email && (!emailValid || emailTaken)}
+          helperText={
+            checkingEmail
+              ? 'در حال بررسی ایمیل...'
+              : !email
+                ? ''
+                : !emailValid
+                  ? 'فقط ایمیل‌های Gmail مجاز هستند.'
+                  : emailTaken
+                    ? 'این ایمیل قبلاً ثبت شده است.'
+                    : '✅ ایمیل قابل استفاده است.'
+          }
+          sx={{ mb: 2 }}
+        />
+
+        <TextField
+          fullWidth
+          label="رمز عبور"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          sx={{ mb: 2 }}
+        />
+
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {sent && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            ✅ لینک تأیید برای ایمیل شما ارسال شد. لطفاً آن را بررسی کرده و سپس وارد شوید.
+          </Alert>
+        )}
+
+        <Button
+          fullWidth
+          variant="contained"
+          onClick={handleSignup}
+          disabled={buttonDisabled}
         >
-            <Paper
-                dir="rtl"
-                sx={{
-                    p: 4, borderRadius: 4,
-                    maxWidth: 400, width: '100%',
-                    bgcolor: 'rgba(255,255,255,0.95)',
-                    backdropFilter: 'blur(6px)'
-                }}
-            >
-                <Typography variant="h5" fontWeight="bold" gutterBottom>
-                    ✉️ ثبت‌نام معلم
-                </Typography>
-
-                <Typography fontSize={14} color="text.secondary" mb={2}>
-                    لطفاً ایمیل خود را وارد کنید. یک لینک تأیید برای شما ارسال خواهد شد.
-                </Typography>
-
-                <TextField
-                    fullWidth
-                    label="ایمیل"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    sx={{ mb: 2 }}
-                />
-
-                {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                {sent && <Alert severity="success" sx={{ mb: 2 }}>ایمیل ارسال شد ✅ لطفاً صندوق ایمیل خود را بررسی کنید.</Alert>}
-
-                <Button
-                    fullWidth
-                    variant="contained"
-                    onClick={handleSignup}
-                    disabled={loading}
-                    sx={{ fontWeight: 'bold', py: 1.4 }}
-                >
-                    {loading ? <CircularProgress size={24} color="inherit" /> : 'ارسال لینک تأیید'}
-                </Button>
-            </Paper>
-        </Box>
-    )
+          {loading ? <CircularProgress size={22} color="inherit" /> : 'ثبت‌نام'}
+        </Button>
+      </Paper>
+    </Box>
+  )
 }

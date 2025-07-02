@@ -42,10 +42,8 @@ export default function TeacherSignup() {
     return (
         <Box
             sx={{
-                width: '100vw',
-                height: '100vh',
-                backgroundImage: 'url("/bg.png")',
-                backgroundSize: 'cover',
+                minHeight: '100vh',
+                width: '100%',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -55,9 +53,12 @@ export default function TeacherSignup() {
             <Paper
                 dir="rtl"
                 sx={{
-                    p: 4, maxWidth: 420, width: '100%',
+                    p: 4,
+                    maxWidth: 420,
+                    width: '100%',
                     bgcolor: 'rgba(255,255,255,0.95)',
-                    borderRadius: 4, backdropFilter: 'blur(8px)',
+                    borderRadius: 4,
+                    backdropFilter: 'blur(8px)',
                     boxShadow: 6
                 }}
             >
@@ -94,7 +95,9 @@ export default function TeacherSignup() {
                 />
 
                 {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-                {sent && <Alert severity="success" sx={{ mb: 2 }}>ایمیل تأیید ارسال شد ✅ لطفاً صندوق ایمیل خود را بررسی کنید.</Alert>}
+                {sent && <Alert severity="success" sx={{ mb: 2 }}>
+                    ایمیل تأیید ارسال شد ✅ لطفاً صندوق ایمیل خود را بررسی کنید.
+                </Alert>}
 
                 <Button
                     variant="contained"

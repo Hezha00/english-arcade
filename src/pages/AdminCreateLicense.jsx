@@ -16,20 +16,22 @@ export default function AdminCreateLicense() {
     const [duration, setDuration] = useState('1 month')
     const [code, setCode] = useState('')
     const [snack, setSnack] = useState('')
+    const [loading, setLoading] = useState(false)
     const navigate = useNavigate()
 
+    // 🔐 Check admin role on load
     useEffect(() => {
         const checkAdmin = async () => {
             const { data: auth } = await supabase.auth.getUser()
             const uid = auth?.user?.id
 
-            const { data: teacher } = await supabase
+            const { data: teacher, error } = await supabase
                 .from('teachers')
                 .select('role')
                 .eq('auth_id', uid)
                 .single()
 
-            if (teacher?.role !== 'admin') {
+            if (error || teacher?.role !== 'admin') {
                 navigate('/not-authorized')
             }
         }
@@ -37,6 +39,7 @@ export default function AdminCreateLicense() {
         checkAdmin()
     }, [navigate])
 
+    // 🧪 Generate random license code
     const generateCode = () => {
         const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
         let output = ''
@@ -46,17 +49,28 @@ export default function AdminCreateLicense() {
         setCode(output)
     }
 
+    // ✅ Insert new license
     const handleCreate = async () => {
-        if (!code || !duration) return
+        if (!code || !duration) {
+            setSnack('لطفاً کد و مدت زمان را وارد کنید')
+            return
+        }
 
-        const { error } = await supabase.from('licenses').insert({
-            code,
-            duration,
-            is_used: false
-        })
+        setLoading(true)
+
+        const { error } = await supabase.from('licenses').insert([
+            {
+                code,
+                duration,
+                is_used: false
+            }
+        ])
+
+        setLoading(false)
 
         if (error) {
-            setSnack('❌ خطا در ایجاد لایسنس')
+            console.error('❌ Supabase insert error:', error.message)
+            setSnack('❌ خطا در ایجاد لایسنس: ' + error.message)
         } else {
             setSnack('✅ لایسنس با موفقیت ثبت شد')
             setCode('')
@@ -67,8 +81,7 @@ export default function AdminCreateLicense() {
         <Box
             sx={{
                 height: '100vh',
-                backgroundImage: 'url("/bg.png")',
-                backgroundSize: 'cover',
+                background: 'linear-gradient(to bottom right, #0f2027, #203a43, #2c5364)',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -78,8 +91,12 @@ export default function AdminCreateLicense() {
             <Paper
                 dir="rtl"
                 sx={{
-                    p: 4, borderRadius: 3, maxWidth: 480, width: '100%',
-                    bgcolor: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(6px)'
+                    p: 4,
+                    borderRadius: 3,
+                    maxWidth: 480,
+                    width: '100%',
+                    bgcolor: 'rgba(255,255,255,0.95)',
+                    backdropFilter: 'blur(6px)'
                 }}
             >
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
@@ -122,13 +139,14 @@ export default function AdminCreateLicense() {
                     fullWidth
                     variant="contained"
                     onClick={handleCreate}
+                    disabled={loading}
                 >
-                    ثبت لایسنس
+                    {loading ? 'در حال ثبت...' : 'ثبت لایسنس'}
                 </Button>
 
                 <Snackbar
                     open={!!snack}
-                    autoHideDuration={2500}
+                    autoHideDuration={3000}
                     onClose={() => setSnack('')}
                     message={snack}
                 />

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import {
-    Box, Paper, Typography, List, ListItem, Divider, ListItemText,
-    Chip, CircularProgress, MenuItem, Select, FormControl, InputLabel
+    Box, Paper, Typography, List, ListItem, Divider, ListItemText, Chip,
+    CircularProgress, MenuItem, Select, FormControl, InputLabel, Alert
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
 import dayjs from 'dayjs'
@@ -10,24 +10,37 @@ export default function AdminLicenseList() {
     const [licenses, setLicenses] = useState([])
     const [filtered, setFiltered] = useState([])
     const [loading, setLoading] = useState(true)
+    const [error, setError] = useState('')
     const [sortMode, setSortMode] = useState('newest')
 
-    // ✅ Fetch data on mount
     useEffect(() => {
         const fetchLicenses = async () => {
+            const { data: authData } = await supabase.auth.getUser()
+            const email = authData?.user?.email
+
+            if (email !== 'superadminkhaledi@arcade.dev') {
+                setError('⛔ دسترسی غیرمجاز')
+                setLoading(false)
+                return
+            }
+
             const { data, error } = await supabase
                 .from('licenses')
-                .select('*')
+                .select('*, teacher:teachers(username, email)')
 
-            if (!error && data) {
+            if (error) {
+                console.error('License fetch failed:', error.message)
+                setError('⛔ خطا در بارگذاری لایسنس‌ها: ' + error.message)
+            } else {
                 setLicenses(data)
-                setLoading(false)
             }
+
+            setLoading(false)
         }
+
         fetchLicenses()
     }, [])
 
-    // 🧠 Apply sorting/filtering
     useEffect(() => {
         const now = dayjs()
         let list = [...licenses]
@@ -37,14 +50,14 @@ export default function AdminLicenseList() {
         } else if (sortMode === 'oldest') {
             list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
         } else if (sortMode === 'expired') {
-            list = list.filter(
-                l => l.is_used &&
-                    dayjs(l.redeemed_at).add(durationToMonths(l.duration), 'month').isBefore(now)
+            list = list.filter(l =>
+                l.is_used &&
+                dayjs(l.redeemed_at).add(durationToMonths(l.duration), 'month').isBefore(now)
             )
         } else if (sortMode === 'active') {
-            list = list.filter(
-                l => l.is_used &&
-                    dayjs(l.redeemed_at).add(durationToMonths(l.duration), 'month').isAfter(now)
+            list = list.filter(l =>
+                l.is_used &&
+                dayjs(l.redeemed_at).add(durationToMonths(l.duration), 'month').isAfter(now)
             )
         }
 
@@ -67,6 +80,14 @@ export default function AdminLicenseList() {
         )
     }
 
+    if (error) {
+        return (
+            <Box sx={{ mt: 6, px: 2 }}>
+                <Alert severity="error" dir="rtl">{error}</Alert>
+            </Box>
+        )
+    }
+
     return (
         <Box
             sx={{
@@ -82,7 +103,7 @@ export default function AdminLicenseList() {
             <Paper
                 dir="rtl"
                 sx={{
-                    maxWidth: 700,
+                    maxWidth: '95vw',
                     width: '100%',
                     p: 4,
                     borderRadius: 4,
@@ -92,9 +113,7 @@ export default function AdminLicenseList() {
                 }}
             >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Typography variant="h6" fontWeight="bold">
-                        🎫 لیست لایسنس‌ها
-                    </Typography>
+                    <Typography variant="h6" fontWeight="bold">🎫 لیست لایسنس‌ها</Typography>
 
                     <FormControl size="small" sx={{ minWidth: 160 }}>
                         <InputLabel>مرتب‌سازی</InputLabel>
@@ -114,7 +133,7 @@ export default function AdminLicenseList() {
                 <List>
                     {filtered.map((l, idx) => (
                         <React.Fragment key={l.id}>
-                            <ListItem alignItems="flex-start">
+                            <ListItem alignItems="flex-start" sx={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                                 <ListItemText
                                     primary={
                                         <Typography fontWeight="bold">
@@ -126,14 +145,17 @@ export default function AdminLicenseList() {
                                         </Typography>
                                     }
                                     secondary={
-                                        l.is_used
-                                            ? (
-                                                <Typography variant="body2" sx={{ mt: 1 }}>
-                                                    📌 توسط: {l.teacher_id?.slice(0, 12)}... <br />
-                                                    📅 فعال‌سازی: {new Date(l.redeemed_at).toLocaleDateString('fa-IR')}
-                                                </Typography>
-                                            )
-                                            : '⬅️ هنوز استفاده نشده است'
+                                        l.is_used ? (
+                                            <Typography variant="body2" sx={{ mt: 1 }}>
+                                                👤 کاربر: {l.teacher?.username || '[بدون نام]'}
+                                                <br />
+                                                📧 ایمیل: {l.teacher?.email || '[نامشخص]'}
+                                                <br />
+                                                📅 فعال‌سازی: {l.redeemed_at
+                                                    ? new Date(l.redeemed_at).toLocaleDateString('fa-IR')
+                                                    : '—'}
+                                            </Typography>
+                                        ) : '⬅️ هنوز استفاده نشده است'
                                     }
                                 />
                             </ListItem>

@@ -1,10 +1,9 @@
-
-import StudentAppWrapper from '../layouts/StudentAppWrapper'
 import React, { useEffect, useState } from 'react'
 import {
-    Typography, Container, Button, Box
+    Typography, Container, Box, Paper
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
+import StudentAppWrapper from '../layouts/StudentAppWrapper'
 
 export default function StudentDashboard() {
     const [student, setStudent] = useState(null)
@@ -19,22 +18,18 @@ export default function StudentDashboard() {
         }
     }, [])
 
-    const logout = () => {
-        localStorage.removeItem('student')
-        navigate('/student-login')
-    }
-
     if (!student) return null
 
     return (
-        <StudentAppWrapper profileColor={student?.profile_color}>
+        <StudentAppWrapper student={student}>
             <Container dir="rtl" sx={{ mt: 4 }}>
                 <Typography variant="h5" gutterBottom>
-                    خوش آمدید، {student.username}
+                    👋 سلام، {student.name || student.username} عزیز!
                 </Typography>
-                <Typography>مدرسه: {student.school}</Typography>
-                <Typography>پایه: {student.year_level}</Typography>
-                <Typography>کلاس: {student.classroom}</Typography>
+
+                <Typography>🎓 مدرسه: {student.school}</Typography>
+                <Typography>📚 پایه: {student.year_level || 'ثبت نشده'}</Typography>
+                <Typography>🏫 کلاس: {student.classroom}</Typography>
 
                 <Box
                     sx={{
@@ -46,17 +41,12 @@ export default function StudentDashboard() {
                     }}
                 />
 
-                <Typography variant="h6" sx={{ mt: 2 }}>
-                    نشان شما: {student.badge || '❓'}
-                </Typography>
-
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                    مجموع امتیاز: {student.total_score ?? 0}
-                </Typography>
-
-                <Button sx={{ mt: 4 }} variant="outlined" onClick={logout}>
-                    خروج
-                </Button>
+                <Paper elevation={3} sx={{ mt: 3, p: 2 }}>
+                    <Typography variant="h6">🏅 نشان شما: {student.badge || '❓'}</Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                        🎯 مجموع امتیاز شما: {student.total_score ?? 0}
+                    </Typography>
+                </Paper>
             </Container>
         </StudentAppWrapper>
     )

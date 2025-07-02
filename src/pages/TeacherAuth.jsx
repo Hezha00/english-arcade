@@ -13,62 +13,67 @@ export default function TeacherAuth() {
     const [isLoading, setIsLoading] = useState(false)
     const navigate = useNavigate()
 
-    const handleLogin = async () => {
+    const handleLogin = async (e) => {
+        e.preventDefault()
         setIsLoading(true)
         setErrorMsg('')
 
-        const { data: auth, error } = await supabase.auth.signInWithPassword({ email, password })
+        const { data: auth, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+        })
 
         if (error || !auth?.user) {
+            console.error('❌ Login error:', error?.message)
             setErrorMsg('ورود ناموفق. لطفاً اطلاعات را بررسی کنید.')
             setIsLoading(false)
             return
         }
 
         const uid = auth.user.id
-        const { data: teacher, error: dbError } = await supabase
+
+        const { data: teacher, error: dbErr } = await supabase
             .from('teachers')
             .select('*')
             .eq('auth_id', uid)
             .single()
 
-        if (dbError || !teacher) {
-            setErrorMsg('اطلاعات معلم یافت نشد.')
-            setIsLoading(false)
-            return
+        if (dbErr?.code === 'PGRST116') {
+            const insert = await supabase.from('teachers').insert([
+                {
+                    auth_id: uid,
+                    email: auth.user.email,
+                    username: 'placeholder',
+                    role: 'teacher',
+                    created_at: new Date().toISOString()
+                }
+            ])
+
+            if (insert.error) {
+                console.error('❌ Insert failed:', insert.error.message)
+                setErrorMsg('خطا در ایجاد حساب معلم. لطفاً دوباره تلاش کنید.')
+                setIsLoading(false)
+                return
+            }
         }
 
         const isAdmin =
-            (teacher.role && teacher.role.toLowerCase() === 'admin') ||
+            (teacher?.role && teacher.role.toLowerCase() === 'admin') ||
             email.toLowerCase() === 'master@admin.com'
 
-        navigate(isAdmin ? '/admin-dashboard' : '/teacher-assignments')
+        navigate(isAdmin ? '/admin-dashboard' : '/dashboard')
         setIsLoading(false)
     }
 
     return (
-        <Box
-            sx={{
-                width: '100vw',
-                height: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundImage: 'url("/bg.png")',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
-            }}
-        >
+        <Box sx={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Paper
                 dir="rtl"
                 sx={{
-                    width: '100%',
-                    maxWidth: 400,
+                    width: 400,
                     p: 4,
                     borderRadius: 4,
-                    bgcolor: 'rgba(255,255,255,0.95)',
-                    backdropFilter: 'blur(8px)',
+                    bgcolor: 'white',
                     boxShadow: 6
                 }}
             >
@@ -76,38 +81,44 @@ export default function TeacherAuth() {
                     👨‍🏫 ورود معلم
                 </Typography>
 
-                <TextField
-                    fullWidth
-                    label="ایمیل"
-                    margin="normal"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
+                <form onSubmit={handleLogin}>
+                    <TextField
+                        fullWidth
+                        label="ایمیل"
+                        margin="normal"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                    />
 
-                <TextField
-                    fullWidth
-                    label="رمز عبور"
-                    type="password"
-                    margin="normal"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
+                    <TextField
+                        fullWidth
+                        label="رمز عبور"
+                        type="password"
+                        margin="normal"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                    />
 
-                {errorMsg && <Alert severity="error" sx={{ mt: 2 }}>{errorMsg}</Alert>}
+                    {errorMsg && <Alert severity="error" sx={{ mt: 2 }}>{errorMsg}</Alert>}
 
-                <Button
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    onClick={handleLogin}
-                    disabled={isLoading}
-                    sx={{ mt: 3, py: 1.5, fontWeight: 'bold' }}
-                >
-                    {isLoading ? <CircularProgress size={24} color="inherit" /> : 'ورود'}
-                </Button>
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        disabled={isLoading}
+                        sx={{ mt: 3, py: 1.5, fontWeight: 'bold' }}
+                    >
+                        {isLoading ? <CircularProgress size={24} color="inherit" /> : 'ورود'}
+                    </Button>
+                </form>
 
-                <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
-                    حساب ندارید؟{' '}
+                {/* 🔁 Add Signup Prompt */}
+                <Typography variant="body2" sx={{ mt: 3, textAlign: 'center' }}>
+                    هنوز حساب ندارید؟{' '}
                     <span
                         onClick={() => navigate('/teacher-signup')}
                         style={{ color: '#1976d2', cursor: 'pointer', fontWeight: 'bold' }}
