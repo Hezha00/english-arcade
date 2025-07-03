@@ -45,7 +45,7 @@ import './index.css'
 const root = ReactDOM.createRoot(document.getElementById('root'))
 
 root.render(
-  <BrowserRouter basename="/">
+  <BrowserRouter>
     <Routes>
       {/* 🔸 Public */}
       <Route path="/" element={<LandingScreen />} />
@@ -84,7 +84,7 @@ root.render(
       <Route path="/admin-license-list" element={<AdminLicenseList />} />
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
 
-      {/* ⚠️ Wildcard fallback route for GitHub Pages routing */}
+      {/* 🌍 Wildcard fallback */}
       <Route path="*" element={<LandingScreen />} />
     </Routes>
   </BrowserRouter>
