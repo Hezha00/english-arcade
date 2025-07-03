@@ -43,7 +43,7 @@ export default function ClassroomDetails() {
 
                 const { data: assignment, error: assignErr } = await supabase
                     .from('assignments')
-                    .select('id')
+                    .select('id, title, created_at, classroom') // ✅ fixed select
                     .eq('teacher_id', uid)
                     .eq('classroom', classDecoded)
                     .order('created_at', { ascending: false })
@@ -55,7 +55,7 @@ export default function ClassroomDetails() {
 
                 const { data: game, error: gameErr } = await supabase
                     .from('games')
-                    .select('id')
+                    .select('id, title, created_at') // ✅ fixed select
                     .eq('teacher_id', uid)
                     .order('created_at', { ascending: false })
                     .limit(1)
