@@ -45,7 +45,7 @@ import './index.css'
 const root = ReactDOM.createRoot(document.getElementById('root'))
 
 root.render(
-  <BrowserRouter basename="/english-arcade">
+  <BrowserRouter basename="/">
     <Routes>
       {/* 🔸 Public */}
       <Route path="/" element={<LandingScreen />} />
