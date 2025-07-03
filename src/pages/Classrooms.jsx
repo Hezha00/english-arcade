@@ -1,11 +1,25 @@
 import React, { useEffect, useState } from 'react'
 import {
-    Typography, Box, List, ListItem, ListItemText, Divider, CircularProgress,
-    Button, Dialog, DialogTitle, DialogContent, TextField, IconButton, Tooltip, Alert
+    Typography,
+    Box,
+    List,
+    ListItem,
+    ListItemText,
+    Divider,
+    CircularProgress,
+    Button,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    TextField,
+    IconButton,
+    Tooltip,
+    Alert
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import { supabase } from '../supabaseClient'
 import TeacherLayout from '../components/TeacherLayout'
+import { useNavigate } from 'react-router-dom'
 
 export default function Classrooms() {
     const [classes, setClasses] = useState([])
@@ -21,6 +35,8 @@ export default function Classrooms() {
 
     const [teacherId, setTeacherId] = useState(null)
     const [createdList, setCreatedList] = useState([])
+
+    const navigate = useNavigate()
 
     const fetchClasses = async (uid) => {
         setLoading(true)
@@ -86,14 +102,9 @@ export default function Classrooms() {
             students: studentData
         }
 
-        console.log('📤 Sending payload to Edge Function:', payload)
-
         const { data, error } = await supabase.functions.invoke('create_students', {
             body: payload
         })
-
-        console.log('✅ Edge Function response:', data)
-        console.log('🪵 Errors from Edge Function:', data?.errors)
 
         if (error) {
             console.error('❌ Edge Function error:', error.message || error)
@@ -139,9 +150,9 @@ export default function Classrooms() {
                             <React.Fragment key={classroom + school}>
                                 <ListItem
                                     button
-                                    onClick={() => {
-                                        window.location.href = `/classrooms/${encodeURIComponent(classroom)}`
-                                    }}
+                                    onClick={() =>
+                                        navigate(`/classrooms/${encodeURIComponent(classroom)}`) // ✅ Now safe!
+                                    }
                                 >
                                     <ListItemText
                                         primary={`کلاس: ${classroom}`}

@@ -1,7 +1,12 @@
 import React, { useState } from 'react'
 import {
-    TextField, Typography, Paper, Button, Box,
-    Alert, CircularProgress
+    TextField,
+    Typography,
+    Paper,
+    Button,
+    Box,
+    Alert,
+    CircularProgress
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
@@ -66,7 +71,15 @@ export default function TeacherAuth() {
     }
 
     return (
-        <Box sx={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box
+            sx={{
+                width: '100vw',
+                height: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}
+        >
             <Paper
                 dir="rtl"
                 sx={{
@@ -87,6 +100,7 @@ export default function TeacherAuth() {
                         label="ایمیل"
                         margin="normal"
                         type="email"
+                        autoComplete="username" // ✅ Added
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -97,12 +111,17 @@ export default function TeacherAuth() {
                         label="رمز عبور"
                         type="password"
                         margin="normal"
+                        autoComplete="current-password" // ✅ Added
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
 
-                    {errorMsg && <Alert severity="error" sx={{ mt: 2 }}>{errorMsg}</Alert>}
+                    {errorMsg && (
+                        <Alert severity="error" sx={{ mt: 2 }}>
+                            {errorMsg}
+                        </Alert>
+                    )}
 
                     <Button
                         type="submit"
@@ -112,16 +131,23 @@ export default function TeacherAuth() {
                         disabled={isLoading}
                         sx={{ mt: 3, py: 1.5, fontWeight: 'bold' }}
                     >
-                        {isLoading ? <CircularProgress size={24} color="inherit" /> : 'ورود'}
+                        {isLoading ? (
+                            <CircularProgress size={24} color="inherit" />
+                        ) : (
+                            'ورود'
+                        )}
                     </Button>
                 </form>
 
-                {/* 🔁 Add Signup Prompt */}
                 <Typography variant="body2" sx={{ mt: 3, textAlign: 'center' }}>
                     هنوز حساب ندارید؟{' '}
                     <span
                         onClick={() => navigate('/teacher-signup')}
-                        style={{ color: '#1976d2', cursor: 'pointer', fontWeight: 'bold' }}
+                        style={{
+                            color: '#1976d2',
+                            cursor: 'pointer',
+                            fontWeight: 'bold'
+                        }}
                     >
                         ثبت‌نام کنید
                     </span>
