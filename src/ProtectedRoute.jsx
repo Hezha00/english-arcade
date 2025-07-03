@@ -11,13 +11,24 @@ export default function ProtectedRoute({ children }) {
     const navigate = useNavigate()
 
     useEffect(() => {
-        const checkAccess = async () => {
+        async function validateSessionAndSubscription() {
+            // ✅ Restore session first
+            const { data: sessionData } = await supabase.auth.getSession()
+            const session = sessionData?.session
+
+            if (!session) {
+                navigate('/teacher-login')
+                return
+            }
+
+            // ✅ Get teacher profile
             const teacher = await ensureTeacherProfile()
             if (!teacher) {
                 navigate('/teacher-login')
                 return
             }
 
+            // ✅ Check subscription expiration
             const expires = teacher.subscription_expires
                 ? dayjs.utc(teacher.subscription_expires)
                 : null
@@ -27,13 +38,14 @@ export default function ProtectedRoute({ children }) {
                 return
             }
 
+            // ✅ All good
             setLoading(false)
         }
 
-        checkAccess()
+        validateSessionAndSubscription()
     }, [])
 
-    if (loading) return <div>در حال بررسی اشتراک...</div>
+    if (loading) return <div>در حال بررسی اشتراک و ورود...</div>
 
     return <>{children}</>
 }
