@@ -39,6 +39,7 @@ import TeacherDashboard from './pages/TeacherDashboard'
 // Layouts
 import TeacherLayout from './components/TeacherLayout'
 import ProtectedRoute from './ProtectedRoute'
+import SessionGuard from './SessionGuard' // ✅ NEW
 
 import './index.css'
 
@@ -61,23 +62,210 @@ root.render(
       <Route path="/renew-subscription" element={<TeacherSubscription />} />
 
       {/* 🧑‍🏫 Protected Teacher Dashboard Routes */}
-      <Route path="/dashboard" element={<ProtectedRoute><TeacherLayout><Dashboard /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/classrooms" element={<ProtectedRoute><TeacherLayout><Classrooms /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/classrooms/:className" element={<ProtectedRoute><TeacherLayout><ClassroomDetails /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/account-settings" element={<ProtectedRoute><TeacherLayout><AccountSettings /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/teacher-games" element={<ProtectedRoute><TeacherLayout><TeacherGamesDashboard /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/game-repository" element={<ProtectedRoute><TeacherLayout><GameRepository /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/assign-game/:gameId" element={<ProtectedRoute><TeacherLayout><AssignGame /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/teacher-assignments-list" element={<ProtectedRoute><TeacherLayout><TeacherAssignments /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/add-assignment" element={<ProtectedRoute><TeacherLayout><NewAssignmentForm /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/create-assignment" element={<ProtectedRoute><TeacherLayout><CreateAssignment /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/add-questions" element={<ProtectedRoute><TeacherLayout><AddQuestions /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/teacher-assignments" element={<ProtectedRoute><TeacherLayout><TeacherAssignmentsDashboard /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/teacher-grading" element={<ProtectedRoute><TeacherLayout><TeacherGradingPanel /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/teacher-results-admin" element={<ProtectedRoute><TeacherLayout><TeacherResultsAdmin /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/teacher-feedback" element={<ProtectedRoute><TeacherLayout><TeacherFeedbackDashboard /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/teacher-analytics" element={<ProtectedRoute><TeacherLayout><TeacherAnalytics /></TeacherLayout></ProtectedRoute>} />
-      <Route path="/teacher-dashboard" element={<ProtectedRoute><TeacherLayout><TeacherDashboard /></TeacherLayout></ProtectedRoute>} />
+      <Route
+        path="/dashboard"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <Dashboard />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/classrooms"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <Classrooms />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/classrooms/:className"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <ClassroomDetails />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/account-settings"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <AccountSettings />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/teacher-games"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <TeacherGamesDashboard />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/game-repository"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <GameRepository />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/assign-game/:gameId"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <AssignGame />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/teacher-assignments-list"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <TeacherAssignments />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/add-assignment"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <NewAssignmentForm />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/create-assignment"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <CreateAssignment />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/add-questions"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <AddQuestions />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/teacher-assignments"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <TeacherAssignmentsDashboard />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/teacher-grading"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <TeacherGradingPanel />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/teacher-results-admin"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <TeacherResultsAdmin />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/teacher-feedback"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <TeacherFeedbackDashboard />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/teacher-analytics"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <TeacherAnalytics />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/teacher-dashboard"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <TeacherDashboard />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
 
       {/* 🛡️ Admin */}
       <Route path="/admin-create-license" element={<AdminCreateLicense />} />
