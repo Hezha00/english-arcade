@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import {
-    Box, Paper, Typography, Alert, TextField,
-    Button, Snackbar, CircularProgress
+    Box,
+    Paper,
+    Typography,
+    Alert,
+    TextField,
+    Button,
+    Snackbar,
+    CircularProgress
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
@@ -23,26 +29,25 @@ export default function TeacherSubscription() {
     const [teacher, setTeacher] = useState(null)
     const [expired, setExpired] = useState(false)
     const [key, setKey] = useState('')
-    const [snack, setSnack] = useState('')
+    const [licenseStatus, setLicenseStatus] = useState('idle') // idle, checking, valid, invalid
     const [checking, setChecking] = useState(false)
-    const [licenseStatus, setLicenseStatus] = useState('idle') // 'idle', 'checking', 'valid', 'invalid'
-
+    const [snack, setSnack] = useState('')
     const navigate = useNavigate()
 
     useEffect(() => {
-        const fetchTeacher = async () => {
+        async function loadTeacher() {
             const { data: auth } = await supabase.auth.getUser()
             const uid = auth?.user?.id
             const email = auth?.user?.email || ''
             const isSuperAdmin = email === 'superadminkhaledi@arcade.dev'
 
-            let { data: teacherRecord } = await supabase
+            let { data: record } = await supabase
                 .from('teachers')
                 .select('*')
                 .eq('auth_id', uid)
                 .single()
 
-            if (!teacherRecord) {
+            if (!record) {
                 const { data: inserted } = await supabase
                     .from('teachers')
                     .insert({
@@ -54,125 +59,125 @@ export default function TeacherSubscription() {
                     })
                     .select()
                     .single()
-
-                teacherRecord = inserted
+                record = inserted
             }
 
-            setTeacher(teacherRecord)
+            setTeacher(record)
 
             if (
                 !isSuperAdmin &&
-                (!teacherRecord?.subscription_expires ||
-                    dayjs(teacherRecord.subscription_expires).isBefore(dayjs()))
+                (!record.subscription_expires ||
+                    dayjs(record.subscription_expires).isBefore(dayjs()))
             ) {
                 setExpired(true)
             }
         }
 
-        fetchTeacher()
+        loadTeacher()
     }, [])
 
-    const durationToMonths = (text) => {
-        if (!text) return 1
-        if (text.includes('24')) return 24
-        if (text.includes('6')) return 6
-        if (text.includes('3')) return 3
+    const durationToMonths = txt => {
+        if (txt.includes('24')) return 24
+        if (txt.includes('6')) return 6
+        if (txt.includes('3')) return 3
         return 1
     }
 
-    const handleBuy = (duration) => {
-        const link = `https://yourpayment.com/pay?plan=${encodeURIComponent(duration)}`
-        window.open(link, '_blank')
+    const handleBuy = () => {
+        // Instruct teacher to contact you for purchase
+        window.open('https://t.me/Hezha_kh00', '_blank')
     }
 
-    const validateLicense = async (code) => {
-        if (!code || code.trim().length < 4) {
+    const validateLicense = async code => {
+        const trimmed = code.trim().toUpperCase()
+        if (!trimmed || trimmed.length < 4) {
             setLicenseStatus('idle')
             return
         }
-
         setLicenseStatus('checking')
-
-        const { data: license, error } = await supabase
+        const { data: lic, error } = await supabase
             .from('licenses')
             .select('id')
-            .eq('code', code.trim().toUpperCase())
+            .eq('code', trimmed)
             .eq('is_used', false)
             .maybeSingle()
 
-        if (!error && license) {
-            setLicenseStatus('valid')
-        } else {
-            setLicenseStatus('invalid')
-        }
+        setLicenseStatus(!error && lic ? 'valid' : 'invalid')
     }
 
     const handleActivateKey = async () => {
         setChecking(true)
-
-        const { data: license, error } = await supabase
+        const code = key.trim().toUpperCase()
+        const { data: lic, error: fetchErr } = await supabase
             .from('licenses')
             .select('*')
-            .eq('code', key.trim().toUpperCase())
+            .eq('code', code)
             .eq('is_used', false)
             .maybeSingle()
 
-        if (error || !license) {
-            setSnack('کد لایسنس معتبر نیست ❌')
+        if (fetchErr || !lic) {
+            setSnack('❌ کد لایسنس معتبر نیست یا قبلا استفاده شده')
             setChecking(false)
             return
         }
 
-        const months = durationToMonths(license.duration)
-
-        const { error: rpcError } = await supabase.rpc('set_teacher_subscription', {
+        const months = durationToMonths(lic.duration)
+        const payload = {
             input_teacher_id: teacher.auth_id,
             duration_months: months,
-            license_code_input: license.code,
-            license_id: license.id
-        })
-
-        if (rpcError) {
-            console.error('RPC error:', rpcError.message)
-            setSnack('خطا در فعال‌سازی لایسنس ❌')
-            setChecking(false)
-            return
+            license_code_input: lic.code,
+            license_id: lic.id
         }
 
-        const { data: updated } = await supabase
-            .from('teachers')
-            .select('*')
-            .eq('auth_id', teacher.auth_id)
-            .single()
+        const { error: rpcErr } = await supabase.rpc(
+            'set_teacher_subscription',
+            payload
+        )
 
-        setTeacher(updated)
-        setSnack('✅ اشتراک فعال شد')
+        if (rpcErr) {
+            console.error('RPC error full:', rpcErr)
+            setSnack(`❌ خطا در فعال‌سازی: ${rpcErr.message}`)
+        } else {
+            // Refresh teacher record
+            const { data: updated } = await supabase
+                .from('teachers')
+                .select('*')
+                .eq('auth_id', teacher.auth_id)
+                .single()
+            setTeacher(updated)
+            setExpired(false)
+            setSnack('✅ اشتراک با موفقیت فعال شد')
+        }
+
         setChecking(false)
-        setExpired(false)
     }
 
-    const getLicenseFeedback = () => {
+    const licenseFeedback = () => {
         switch (licenseStatus) {
-            case 'valid':
-                return '✅ لایسنس معتبر است'
-            case 'invalid':
-                return '❌ لایسنس نامعتبر است یا قبلاً استفاده شده'
             case 'checking':
                 return 'در حال بررسی...'
+            case 'valid':
+                return '✅ کد معتبر است'
+            case 'invalid':
+                return '❌ کد نامعتبر است'
             default:
                 return ''
         }
     }
 
+    // If subscription still valid, show dashboard link
     if (!expired) {
         return (
             <Box sx={{ textAlign: 'center', mt: 10 }}>
-                <Typography variant="h5" fontWeight="bold">✅ اشتراک شما فعال است</Typography>
-                <Typography variant="body1" sx={{ mt: 1 }}>
-                    انقضا:
-                    {' '}
+                <Typography variant="h5" fontWeight="bold">
+                    ✅ اشتراک شما فعال است
+                </Typography>
+                <Typography sx={{ mt: 1 }}>
+                    انقضا:{' '}
                     {teacher?.subscription_expires
-                        ? dayjs(teacher.subscription_expires).calendar('jalali').format('YYYY/MM/DD')
+                        ? dayjs(teacher.subscription_expires)
+                            .calendar('jalali')
+                            .format('YYYY/MM/DD')
                         : '—'}
                 </Typography>
                 <Button
@@ -186,6 +191,7 @@ export default function TeacherSubscription() {
         )
     }
 
+    // Expired flow: contact admin + input code + purchase prompt
     return (
         <Box
             sx={{
@@ -193,8 +199,8 @@ export default function TeacherSubscription() {
                 backgroundImage: 'url("/bg.png")',
                 backgroundSize: 'cover',
                 display: 'flex',
-                justifyContent: 'center',
                 alignItems: 'center',
+                justifyContent: 'center',
                 px: 2
             }}
         >
@@ -203,60 +209,60 @@ export default function TeacherSubscription() {
                 sx={{
                     p: 4,
                     borderRadius: 3,
-                    maxWidth: 500,
+                    maxWidth: 480,
                     width: '100%',
                     bgcolor: 'rgba(255,255,255,0.95)',
-                    backdropFilter: 'blur(6px)'
+                    backdropFilter: 'blur(6px)',
+                    textAlign: 'center'
                 }}
             >
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
-                    ❗ اشتراک شما منقضی شده است ❗
+                    اشتراک شما منقضی شده است
                 </Typography>
-                <Alert severity="warning" sx={{ mb: 2 }}>
-                    برای ادامه استفاده از امکانات معلم، لطفاً اشتراک خود را تمدید کنید.
+
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    اگر لایسنس دارید و این یک اشتباه است، لطفاً با مدیر سایت تماس بگیرید.
                 </Alert>
 
-                <Typography>
-                    اگر فکر می‌کنید اشتراک شما به اشتباه منقضی شده است، لطفاً با من تماس بگیرید:
-                    <br />
-                    ☎️ <strong>هیزا خالدی — ۰۹۰۱۸۷۰۰۶۰۳</strong>
+                <Typography sx={{ mb: 1 }}>
+                    <strong>☎️ تماس:</strong> ۰۹۰۱۸۷۰۰۶۰۳ (خالدی)
                 </Typography>
-
-                <Typography sx={{ mt: 3, mb: 1 }} fontWeight="bold">
-                    💳 گزینه‌های تمدید:
-                </Typography>
-
-                {plans.map(p => (
-                    <Button
-                        key={p.duration}
-                        fullWidth
-                        sx={{ my: 0.5 }}
-                        onClick={() => handleBuy(p.duration)}
-                        variant="outlined"
+                <Typography sx={{ mb: 3 }}>
+                    <strong>💬 تلگرام:</strong>{' '}
+                    <a
+                        href="https://t.me/Hezha_kh00"
+                        target="_blank"
+                        rel="noopener noreferrer"
                     >
-                        {p.label} — {p.price.toLocaleString('fa-IR')} تومان
-                    </Button>
-                ))}
+                        @Hezha_kh00
+                    </a>
+                </Typography>
 
-                <Typography sx={{ mt: 4 }}>🎟 اگر لایسنس خریدید:</Typography>
+                <Typography sx={{ mb: 2 }}>
+                    اگر لایسنس ندارید، می‌توانید با مدیر هماهنگ و یک کد جدید دریافت کنید.
+                </Typography>
+
+                <Typography variant="subtitle1" fontWeight="bold" sx={{ my: 2 }}>
+                    وارد کردن کد لایسنس
+                </Typography>
 
                 <TextField
                     fullWidth
                     label="کد لایسنس"
                     value={key}
-                    onChange={(e) => {
-                        const val = e.target.value
-                        setKey(val)
-                        validateLicense(val)
+                    onChange={e => {
+                        setKey(e.target.value)
+                        validateLicense(e.target.value)
                     }}
-                    helperText={getLicenseFeedback()}
+                    helperText={licenseFeedback()}
                     FormHelperTextProps={{
                         sx: {
-                            color: licenseStatus === 'valid'
-                                ? 'green'
-                                : licenseStatus === 'invalid'
-                                    ? 'red'
-                                    : 'inherit'
+                            color:
+                                licenseStatus === 'valid'
+                                    ? 'green'
+                                    : licenseStatus === 'invalid'
+                                        ? 'red'
+                                        : 'inherit'
                         }
                     }}
                     margin="normal"
@@ -267,9 +273,33 @@ export default function TeacherSubscription() {
                     variant="contained"
                     onClick={handleActivateKey}
                     disabled={checking || licenseStatus !== 'valid'}
-                    sx={{ py: 1.2 }}
+                    sx={{ py: 1.5, mt: 1 }}
                 >
-                    {checking ? <CircularProgress size={24} color="inherit" /> : 'فعال‌سازی اشتراک'}
+                    {checking ? (
+                        <CircularProgress size={24} color="inherit" />
+                    ) : (
+                        'فعال‌سازی اشتراک'
+                    )}
+                </Button>
+
+                <Typography sx={{ mt: 3, fontWeight: 'bold' }}>
+                    💳 خرید اشتراک
+                </Typography>
+                <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={handleBuy}
+                    sx={{ mt: 1 }}
+                >
+                    تماس برای خرید لایسنس
+                </Button>
+
+                <Button
+                    variant="text"
+                    sx={{ mt: 3 }}
+                    onClick={() => navigate('/')}
+                >
+                    بازگشت به صفحه اصلی
                 </Button>
 
                 <Snackbar
