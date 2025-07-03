@@ -3,7 +3,7 @@ import {
     Box, Typography, Paper, List, ListItem, ListItemText,
     Divider, CircularProgress, Tooltip
 } from '@mui/material'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import TeacherLayout from '../components/TeacherLayout'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -11,9 +11,9 @@ import CancelIcon from '@mui/icons-material/Cancel'
 
 export default function ClassroomDetails() {
     const { className } = useParams()
-    const navigate = useNavigate()
     const [students, setStudents] = useState([])
     const [loading, setLoading] = useState(true)
+    const [sessionReady, setSessionReady] = useState(false)
     const [latestAssignment, setLatestAssignment] = useState(null)
     const [latestGame, setLatestGame] = useState(null)
     const [assignmentStatus, setAssignmentStatus] = useState({})
@@ -22,87 +22,92 @@ export default function ClassroomDetails() {
 
     useEffect(() => {
         const fetchData = async () => {
-            try {
-                const { data: sessionData } = await supabase.auth.getSession()
-                const session = sessionData?.session
-                if (!session) {
-                    navigate('/teacher-login')
-                    return
-                }
-
-                const uid = session.user.id
-
-                const { data: studentList, error: studentErr } = await supabase
-                    .from('students')
-                    .select('id, name, username, password, school, profile_color')
-                    .eq('teacher_id', uid)
-                    .eq('classroom', classDecoded)
-
-                if (studentErr) throw studentErr
-                setStudents(studentList || [])
-
-                const { data: assignment, error: assignErr } = await supabase
-                    .from('assignments')
-                    .select('id, title, created_at, classroom') // ✅ fixed select
-                    .eq('teacher_id', uid)
-                    .eq('classroom', classDecoded)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .single()
-
-                if (assignErr && assignErr.code !== 'PGRST116') throw assignErr
-                setLatestAssignment(assignment)
-
-                const { data: game, error: gameErr } = await supabase
-                    .from('games')
-                    .select('id, title, created_at') // ✅ fixed select
-                    .eq('teacher_id', uid)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .single()
-
-                if (gameErr && gameErr.code !== 'PGRST116') throw gameErr
-                setLatestGame(game)
-
-                const studentIds = (studentList || []).map(s => s.id)
-
-                if (assignment) {
-                    const { data: assStatus } = await supabase
-                        .from('student_assignment_status')
-                        .select('student_id')
-                        .eq('assignment_id', assignment.id)
-                        .in('student_id', studentIds)
-
-                    const statusMap = {}
-                    assStatus?.forEach(row => {
-                        statusMap[row.student_id] = true
-                    })
-                    setAssignmentStatus(statusMap)
-                }
-
-                if (game) {
-                    const { data: gameStat } = await supabase
-                        .from('student_game_status')
-                        .select('student_id')
-                        .eq('game_id', game.id)
-                        .in('student_id', studentIds)
-
-                    const gameMap = {}
-                    gameStat?.forEach(row => {
-                        gameMap[row.student_id] = true
-                    })
-                    setGameStatus(gameMap)
-                }
-
-                setLoading(false)
-            } catch (err) {
-                console.error('💥 Error in classroom details:', err.message)
-                navigate('/teacher-login')
+            const { data: sessionData } = await supabase.auth.getSession()
+            const session = sessionData?.session
+            if (!session) {
+                // Don't redirect — SessionGuard handles it
+                setSessionReady(true)
+                return
             }
+
+            const uid = session.user.id
+
+            const { data: studentList } = await supabase
+                .from('students')
+                .select('id, name, username, password, school, profile_color')
+                .eq('teacher_id', uid)
+                .eq('classroom', classDecoded)
+
+            setStudents(studentList || [])
+
+            const { data: assignment } = await supabase
+                .from('assignments')
+                .select('id, title, created_at, classroom')
+                .eq('teacher_id', uid)
+                .eq('classroom', classDecoded)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single()
+
+            setLatestAssignment(assignment)
+
+            const { data: game } = await supabase
+                .from('games')
+                .select('id, title, created_at')
+                .eq('teacher_id', uid)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single()
+
+            setLatestGame(game)
+
+            const studentIds = (studentList || []).map(s => s.id)
+
+            if (assignment) {
+                const { data: assStatus } = await supabase
+                    .from('student_assignment_status')
+                    .select('student_id')
+                    .eq('assignment_id', assignment.id)
+                    .in('student_id', studentIds)
+
+                const statusMap = {}
+                assStatus?.forEach(row => {
+                    statusMap[row.student_id] = true
+                })
+                setAssignmentStatus(statusMap)
+            }
+
+            if (game) {
+                const { data: gameStat } = await supabase
+                    .from('student_game_status')
+                    .select('student_id')
+                    .eq('game_id', game.id)
+                    .in('student_id', studentIds)
+
+                const gameMap = {}
+                gameStat?.forEach(row => {
+                    gameMap[row.student_id] = true
+                })
+                setGameStatus(gameMap)
+            }
+
+            setSessionReady(true)
+            setLoading(false)
         }
 
         fetchData()
-    }, [classDecoded, navigate])
+    }, [classDecoded])
+
+    if (!sessionReady) {
+        return (
+            <TeacherLayout>
+                <Box sx={{ textAlign: 'center', mt: 5 }}>
+                    <CircularProgress />
+                    <Typography sx={{ mt: 2 }}>🔐 در حال بررسی اعتبار ورود...</Typography>
+                </Box>
+            </TeacherLayout>
+        )
+    }
 
     return (
         <TeacherLayout>
