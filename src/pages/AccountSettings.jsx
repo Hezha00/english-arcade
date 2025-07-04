@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import {
-    Box, Paper, Typography, CircularProgress
+    Container, Typography, Paper, CircularProgress, Box
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
-import TeacherLayout from '../components/TeacherLayout'
 import dayjs from 'dayjs'
 import jalali from 'dayjs/plugin/calendar'
 import jalaliday from 'jalaliday'
@@ -37,30 +36,47 @@ export default function AccountSettings() {
         fetchTeacher()
     }, [])
 
+    if (loading) {
+        return (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
+                <CircularProgress />
+            </Box>
+        )
+    }
+
     return (
-        <TeacherLayout>
-            {loading ? (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 10 }}>
-                    <CircularProgress />
+        <Container dir="rtl" sx={{ py: 4 }}>
+            <Box
+                dir="rtl"
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    transform: 'translateX(250px)',
+                    mt: -5
+                }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h5" fontWeight="bold">⚙️ تنظیمات حساب</Typography>
                 </Box>
-            ) : (
+
                 <Paper
-                    dir="rtl"
                     sx={{
                         maxWidth: 500,
-                        mx: 'auto',
+                        width: '100%',
                         p: 4,
-                        bgcolor: 'rgba(255,255,255,0.95)',
+                        bgcolor: 'rgba(255,255,255,0.15)',
                         borderRadius: 4,
-                        backdropFilter: 'blur(8px)'
+                        backdropFilter: 'blur(8px)',
+                        color: '#fff'
                     }}
                 >
-                    <Typography variant="h5" fontWeight="bold" gutterBottom>
-                        ⚙️ تنظیمات حساب
+                    <Typography sx={{ mt: 2 }}>
+                        <strong>نام کاربری:</strong> {teacher.username}
                     </Typography>
-
-                    <Typography sx={{ mt: 2 }}><strong>نام کاربری:</strong> {teacher.username}</Typography>
-                    <Typography sx={{ mt: 1 }}><strong>ایمیل:</strong> {teacher.email}</Typography>
+                    <Typography sx={{ mt: 1 }}>
+                        <strong>ایمیل:</strong> {teacher.email}
+                    </Typography>
 
                     {teacher.subscription_expires && (
                         <>
@@ -68,7 +84,7 @@ export default function AccountSettings() {
                                 <strong>تاریخ انقضای اشتراک:</strong>{' '}
                                 {dayjs(teacher.subscription_expires).calendar('jalali').format('YYYY/MM/DD')}
                             </Typography>
-                            <Typography sx={{ mt: 1, color: daysLeft <= 7 ? 'red' : 'green' }}>
+                            <Typography sx={{ mt: 1, color: daysLeft <= 7 ? 'red' : '#0f0' }}>
                                 {daysLeft >= 0
                                     ? `⌛ ${daysLeft} روز باقی‌مانده`
                                     : `⛔ اشتراک شما منقضی شده`}
@@ -76,7 +92,7 @@ export default function AccountSettings() {
                         </>
                     )}
                 </Paper>
-            )}
-        </TeacherLayout>
+            </Box>
+        </Container>
     )
 }

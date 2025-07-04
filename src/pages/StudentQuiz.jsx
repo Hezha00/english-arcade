@@ -1,216 +1,113 @@
 import React, { useEffect, useState } from 'react'
 import {
-    Typography, Container, Box, Button, RadioGroup,
-    Radio, FormControlLabel, LinearProgress, TextField
+    Container, Typography, Box, Paper, Button, CircularProgress,
+    TextField, Alert
 } from '@mui/material'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-import StudentAppWrapper from '../layouts/StudentAppWrapper'
 
 export default function StudentQuiz() {
-    const { assignmentId } = useParams()
-    const navigate = useNavigate()
-    const [questions, setQuestions] = useState([])
-    const [current, setCurrent] = useState(0)
-    const [answers, setAnswers] = useState({})
-    const [submitted, setSubmitted] = useState(false)
-    const [score, setScore] = useState(0)
+    const { gameId } = useParams()
     const [student, setStudent] = useState(null)
+    const [gameData, setGameData] = useState(null)
+    const [answers, setAnswers] = useState([])
     const [loading, setLoading] = useState(true)
-    const [startTime, setStartTime] = useState(null)
-
-    const [feedbackRating, setFeedbackRating] = useState(null)
-    const [feedbackText, setFeedbackText] = useState('')
-    const [feedbackSent, setFeedbackSent] = useState(false)
+    const [submitted, setSubmitted] = useState(false)
+    const [score, setScore] = useState(null)
+    const navigate = useNavigate()
 
     useEffect(() => {
         const saved = localStorage.getItem('student')
-        if (!saved) {
-            navigate('/student-login')
-        } else {
-            const parsed = JSON.parse(saved)
-            setStudent(parsed)
-            fetchQuestions(parsed)
-        }
-    }, [navigate, assignmentId])
+        if (saved) setStudent(JSON.parse(saved))
+        else navigate('/student-login')
+    }, [navigate])
 
-    const fetchQuestions = async (studentData) => {
-        const { data: qData } = await supabase
-            .from('questions')
-            .select('*')
-            .eq('assignment_id', assignmentId)
+    useEffect(() => {
+        const fetchGame = async () => {
+            const { data: game } = await supabase
+                .from('games')
+                .select('file_url, name')
+                .eq('id', gameId)
+                .single()
 
-        setQuestions(qData || [])
-        setLoading(false)
+            if (!game?.file_url) return
 
-        if (!qData || qData.length === 0) return
+            const res = await fetch(game.file_url)
+            const json = await res.json()
 
-        const { data: resultCheck } = await supabase
-            .from('results')
-            .select('*')
-            .eq('student_id', studentData.id)
-            .eq('assignment_id', assignmentId)
-            .maybeSingle()
-
-        if (!resultCheck) {
-            await supabase.from('results').insert([{
-                student_id: studentData.id,
-                assignment_id: assignmentId,
-                finished: false
-            }])
+            setGameData({ name: game.name, wordPairs: json.word_pairs })
+            setAnswers(Array(json.word_pairs.length).fill(''))
+            setLoading(false)
         }
 
-        setStartTime(Date.now())
-    }
+        fetchGame()
+    }, [gameId])
 
-    const handleAnswer = (value) => {
-        setAnswers({ ...answers, [current]: parseInt(value) })
-    }
-
-    const handleNext = () => {
-        if (current < questions.length - 1) {
-            setCurrent(current + 1)
-        }
-    }
-
-    const handlePrev = () => {
-        if (current > 0) {
-            setCurrent(current - 1)
-        }
+    const handleChange = (index, value) => {
+        const updated = [...answers]
+        updated[index] = value
+        setAnswers(updated)
     }
 
     const handleSubmit = async () => {
         let correct = 0
-        questions.forEach((q, idx) => {
-            if (answers[idx] === q.correct_index) correct++
+        gameData.wordPairs.forEach((pair, i) => {
+            if (answers[i].trim().toLowerCase() === pair.english.trim().toLowerCase()) {
+                correct++
+            }
         })
 
-        const endTime = Date.now()
-        const timeTakenSec = Math.floor((endTime - startTime) / 1000)
-
-        await supabase.from('results')
-            .update({
-                finished: true,
-                score: correct,
-                time_taken: timeTakenSec
-            })
-            .eq('student_id', student.id)
-            .eq('assignment_id', assignmentId)
-
-        const newTotal = (student.total_score || 0) + correct
-        await supabase.from('students')
-            .update({ total_score: newTotal })
-            .eq('id', student.id)
-
-        const updated = { ...student, total_score: newTotal }
-        localStorage.setItem('student', JSON.stringify(updated))
-        setStudent(updated)
-
-        setScore(correct)
+        const percentage = Math.round((correct / gameData.wordPairs.length) * 100)
+        setScore(percentage)
         setSubmitted(true)
-    }
 
-    const handleSubmitFeedback = async () => {
-        if (!feedbackRating) {
-            alert('لطفاً یک امتیاز ستاره‌ای انتخاب کنید.')
-            return
-        }
-
-        const { error } = await supabase.from('feedback').insert([{
-            assignment_id: assignmentId,
+        await supabase.from('student_game_status').insert({
             student_id: student.id,
-            username: student.username,
-            rating: feedbackRating,
-            comment: feedbackText
-        }])
-
-        if (!error) setFeedbackSent(true)
+            game_id: gameId,
+            score: percentage,
+            completed_at: new Date().toISOString()
+        })
     }
 
-    if (loading) return <LinearProgress sx={{ mt: 10 }} />
-    if (!questions.length) return <Typography sx={{ mt: 10 }} align="center">سؤالی یافت نشد</Typography>
-
-    const q = questions[current]
+    if (!student || loading) return <CircularProgress sx={{ mt: 10 }} />
 
     return (
-        <StudentAppWrapper profileColor={student?.profile_color}>
-            <Container dir="rtl" sx={{ mt: 4 }}>
-                <Typography variant="h6" gutterBottom>
-                    سوال {current + 1} از {questions.length}
+        <Box sx={{ background: 'url(/bg.png)', minHeight: '100vh', py: 8, px: 2 }}>
+            <Container dir="rtl" maxWidth="md">
+                <Typography variant="h4" fontWeight="bold" color="#fff" gutterBottom>
+                    🎮 بازی: {gameData?.name}
                 </Typography>
 
-                <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                    {q.question_text}
-                </Typography>
-
-                {q.audio_url && (
-                    <audio controls style={{ marginBottom: '1rem' }}>
-                        <source src={q.audio_url} type="audio/mpeg" />
-                        مرورگر شما از پخش صدا پشتیبانی نمی‌کند.
-                    </audio>
-                )}
-
-                <RadioGroup
-                    value={answers[current] ?? ''}
-                    onChange={(e) => handleAnswer(e.target.value)}
-                >
-                    {q.options.map((opt, i) => (
-                        <FormControlLabel
-                            key={i}
-                            value={i}
-                            control={<Radio />}
-                            label={opt}
-                        />
-                    ))}
-                </RadioGroup>
-
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-                    <Button onClick={handlePrev} disabled={current === 0}>قبلی</Button>
-                    <Button onClick={handleNext} disabled={current === questions.length - 1}>بعدی</Button>
-                </Box>
-
-                {!submitted && current === questions.length - 1 && (
-                    <Button variant="contained" sx={{ mt: 3 }} onClick={handleSubmit}>
-                        ارسال پاسخ‌ها
-                    </Button>
-                )}
-
-                {submitted && (
-                    <>
-                        <Typography variant="h6" color="success.main" sx={{ mt: 4 }}>
-                            امتیاز شما: {score} از {questions.length}
-                        </Typography>
-
-                        {!feedbackSent && (
-                            <Box sx={{ mt: 4 }}>
-                                <Typography variant="subtitle1">بازخورد شما درباره این آزمون:</Typography>
-                                <Box sx={{ display: 'flex', gap: 1, my: 1 }}>
-                                    {[1, 2, 3, 4, 5].map((r) => (
-                                        <Button key={r} onClick={() => setFeedbackRating(r)}>{'⭐'.repeat(r)}</Button>
-                                    ))}
-                                </Box>
+                <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.95)' }}>
+                    {submitted ? (
+                        <Alert severity="success" sx={{ mb: 2 }}>
+                            ✅ بازی با موفقیت ثبت شد | نمره شما: {score}%
+                        </Alert>
+                    ) : (
+                        <>
+                            {gameData.wordPairs.map((pair, i) => (
                                 <TextField
+                                    key={i}
                                     fullWidth
-                                    label="یادداشت دلخواه (اختیاری)"
-                                    multiline
-                                    rows={2}
-                                    value={feedbackText}
-                                    onChange={(e) => setFeedbackText(e.target.value)}
+                                    label={`ترجمه "${pair.persian}"`}
+                                    value={answers[i]}
+                                    onChange={e => handleChange(i, e.target.value)}
+                                    sx={{ mb: 2 }}
                                 />
-                                <Button variant="outlined" sx={{ mt: 2 }} onClick={handleSubmitFeedback}>
-                                    ثبت بازخورد
-                                </Button>
-                            </Box>
-                        )}
+                            ))}
 
-                        {feedbackSent && (
-                            <Typography variant="body1" sx={{ mt: 2 }}>
-                                🙏 با تشکر از بازخورد شما!
-                            </Typography>
-                        )}
-                    </>
-                )}
+                            <Button
+                                variant="contained"
+                                fullWidth
+                                onClick={handleSubmit}
+                                disabled={answers.some(a => !a.trim())}
+                            >
+                                ثبت پاسخ‌ها
+                            </Button>
+                        </>
+                    )}
+                </Paper>
             </Container>
-        </StudentAppWrapper>
+        </Box>
     )
 }

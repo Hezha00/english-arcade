@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabaseClient'
+import './index.css' // ✅ Use global gradient theme
 import './App.css'
 
 function App() {
@@ -20,14 +21,25 @@ function App() {
   }, [])
 
   return (
-    <div style={{ textAlign: 'center' }}>
-      <h1>Vite + React</h1>
+    <div
+      dir="rtl"
+      style={{
+        minHeight: '100vh',
+        width: '100%',
+        padding: '2rem',
+        textAlign: 'center',
+        color: '#fff',
+        backdropFilter: 'blur(8px)' // 💫 Match blurred visual aesthetic
+      }}
+    >
+      <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>🎮 English Arcade</h1>
       {user ? (
-        <p>✅ Logged in as: {user.email}</p>
+        <p>✅ وارد شده با: {user.email}</p>
       ) : (
-        <p>🚫 Not logged in</p>
+        <p>🚫 وارد نشده‌اید</p>
       )}
     </div>
   )
 }
+
 export default App

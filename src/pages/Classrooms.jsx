@@ -14,11 +14,12 @@ import {
     TextField,
     IconButton,
     Tooltip,
-    Alert
+    Alert,
+    Paper,
+    Container
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import { supabase } from '../supabaseClient'
-import TeacherLayout from '../components/TeacherLayout'
 import { useNavigate } from 'react-router-dom'
 
 export default function Classrooms() {
@@ -125,8 +126,17 @@ export default function Classrooms() {
     }
 
     return (
-        <TeacherLayout>
-            <Box dir="rtl">
+        <Container dir="rtl" sx={{ py: 4 }}>
+            <Box
+                dir="rtl"
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    transform: 'translateX(250px)',
+                    mt: -5
+                }}
+            >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                     <Typography variant="h5" fontWeight="bold">🏫 کلاس‌های من</Typography>
                     <Tooltip title="ایجاد کلاس جدید">
@@ -136,48 +146,58 @@ export default function Classrooms() {
                     </Tooltip>
                 </Box>
 
-                {loading ? (
-                    <Box sx={{ textAlign: 'center', mt: 5 }}>
-                        <CircularProgress />
-                    </Box>
-                ) : classes.length === 0 ? (
-                    <Typography sx={{ mt: 2 }} color="text.secondary">
-                        هیچ کلاسی پیدا نشد.
-                    </Typography>
-                ) : (
-                    <List>
-                        {classes.map(({ classroom, school, count }) => (
-                            <React.Fragment key={classroom + school}>
-                                <ListItem
-                                    button
-                                    onClick={() =>
-                                        navigate(`/classrooms/${encodeURIComponent(classroom)}`) // ✅ Now safe!
-                                    }
-                                >
-                                    <ListItemText
-                                        primary={`کلاس: ${classroom}`}
-                                        secondary={`مدرسه: ${school} — تعداد دانش‌آموز: ${count}`}
-                                        sx={{ textAlign: 'right' }}
-                                    />
-                                </ListItem>
-                                <Divider />
-                            </React.Fragment>
-                        ))}
-                    </List>
-                )}
+                <Paper
+                    sx={{
+                        p: 3,
+                        borderRadius: 4,
+                        bgcolor: 'rgba(255,255,255,0.15)',
+                        backdropFilter: 'blur(8px)',
+                        color: '#fff'
+                    }}
+                >
+                    {loading ? (
+                        <Box sx={{ textAlign: 'center', mt: 5 }}>
+                            <CircularProgress />
+                        </Box>
+                    ) : classes.length === 0 ? (
+                        <Typography sx={{ mt: 2 }} color="text.secondary">
+                            هیچ کلاسی پیدا نشد.
+                        </Typography>
+                    ) : (
+                        <List>
+                            {classes.map(({ classroom, school, count }) => (
+                                <React.Fragment key={classroom + school}>
+                                    <ListItem
+                                        button
+                                        onClick={() =>
+                                            navigate(`/classrooms/${encodeURIComponent(classroom)}`)
+                                        }
+                                    >
+                                        <ListItemText
+                                            primary={`کلاس: ${classroom}`}
+                                            secondary={`مدرسه: ${school} — تعداد دانش‌آموز: ${count}`}
+                                            sx={{ textAlign: 'right' }}
+                                        />
+                                    </ListItem>
+                                    <Divider />
+                                </React.Fragment>
+                            ))}
+                        </List>
+                    )}
 
-                {createdList.length > 0 && (
-                    <Box sx={{ mt: 3 }}>
-                        <Alert severity="success" sx={{ mb: 2 }}>
-                            ✅ {createdList.length} دانش‌آموز ساخته شد:
-                        </Alert>
-                        {createdList.map(({ username, password }, i) => (
-                            <Typography key={i} sx={{ fontFamily: 'monospace' }}>
-                                👤 {username} — 🔐 {password}
-                            </Typography>
-                        ))}
-                    </Box>
-                )}
+                    {createdList.length > 0 && (
+                        <Box sx={{ mt: 3 }}>
+                            <Alert severity="success" sx={{ mb: 2 }}>
+                                ✅ {createdList.length} دانش‌آموز ساخته شد:
+                            </Alert>
+                            {createdList.map(({ username, password }, i) => (
+                                <Typography key={i} sx={{ fontFamily: 'monospace' }}>
+                                    👤 {username} — 🔐 {password}
+                                </Typography>
+                            ))}
+                        </Box>
+                    )}
+                </Paper>
             </Box>
 
             <Dialog open={open} onClose={() => setOpen(false)} fullWidth maxWidth="sm" dir="rtl">
@@ -251,6 +271,6 @@ export default function Classrooms() {
                     </Button>
                 </DialogContent>
             </Dialog>
-        </TeacherLayout>
+        </Container>
     )
 }

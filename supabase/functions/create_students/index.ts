@@ -39,7 +39,6 @@ serve(async (req) => {
         const errors: any[] = []
         const created: { username: string; password: string }[] = []
 
-        // ✅ Insert classroom
         const { error: classErr } = await supabase.from('classrooms').insert({
             name: classroom,
             school,
@@ -84,7 +83,7 @@ serve(async (req) => {
                 teacher_id,
                 classroom,
                 school,
-                year_level // ✅ assign year level to student
+                year_level
             })
 
             if (dbErr) {

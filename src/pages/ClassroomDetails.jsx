@@ -1,96 +1,52 @@
 import React, { useEffect, useState } from 'react'
 import {
     Box, Typography, Paper, List, ListItem, ListItemText,
-    Divider, CircularProgress, Tooltip
+    Divider, CircularProgress, IconButton, Tooltip, Grid,
+    Dialog, DialogTitle, DialogContent, TextField, Button
 } from '@mui/material'
+import ContentCopyIcon from '@mui/icons-material/ContentCopy'
+import DeleteIcon from '@mui/icons-material/Delete'
+import AddIcon from '@mui/icons-material/Add'
 import { useParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-import TeacherLayout from '../components/TeacherLayout'
-import CheckCircleIcon from '@mui/icons-material/CheckCircle'
-import CancelIcon from '@mui/icons-material/Cancel'
 
 export default function ClassroomDetails() {
     const { className } = useParams()
+    const classDecoded = decodeURIComponent(className)
+
     const [students, setStudents] = useState([])
     const [loading, setLoading] = useState(true)
     const [sessionReady, setSessionReady] = useState(false)
-    const [latestAssignment, setLatestAssignment] = useState(null)
-    const [latestGame, setLatestGame] = useState(null)
-    const [assignmentStatus, setAssignmentStatus] = useState({})
-    const [gameStatus, setGameStatus] = useState({})
-    const classDecoded = decodeURIComponent(className)
+    const [teacherId, setTeacherId] = useState(null)
+    const [schoolName, setSchoolName] = useState('')
+    const [yearLevel, setYearLevel] = useState('')
+    const [dialogOpen, setDialogOpen] = useState(false)
+    const [firstName, setFirstName] = useState('')
+    const [lastName, setLastName] = useState('')
 
     useEffect(() => {
         const fetchData = async () => {
             const { data: sessionData } = await supabase.auth.getSession()
             const session = sessionData?.session
             if (!session) {
-                // Don't redirect — SessionGuard handles it
                 setSessionReady(true)
                 return
             }
 
             const uid = session.user.id
+            setTeacherId(uid)
 
             const { data: studentList } = await supabase
                 .from('students')
-                .select('id, name, username, password, school, profile_color')
+                .select('id, name, username, password, school, profile_color, classroom, year_level')
                 .eq('teacher_id', uid)
                 .eq('classroom', classDecoded)
 
             setStudents(studentList || [])
-
-            const { data: assignment } = await supabase
-                .from('assignments')
-                .select('id, title, created_at, classroom')
-                .eq('teacher_id', uid)
-                .eq('classroom', classDecoded)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single()
-
-            setLatestAssignment(assignment)
-
-            const { data: game } = await supabase
-                .from('games')
-                .select('id, name, created_at')
-                .eq('teacher_id', uid)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single()
-
-            setLatestGame(game)
-
-            const studentIds = (studentList || []).map(s => s.id)
-
-            if (assignment) {
-                const { data: assStatus } = await supabase
-                    .from('student_assignment_status')
-                    .select('student_id')
-                    .eq('assignment_id', assignment.id)
-                    .in('student_id', studentIds)
-
-                const statusMap = {}
-                assStatus?.forEach(row => {
-                    statusMap[row.student_id] = true
-                })
-                setAssignmentStatus(statusMap)
+            if (studentList?.length > 0) {
+                setSchoolName(studentList[0].school || '')
+                setYearLevel(studentList[0].year_level || '')
             }
-
-            if (game) {
-                const { data: gameStat } = await supabase
-                    .from('student_game_status')
-                    .select('student_id')
-                    .eq('game_id', game.id)
-                    .in('student_id', studentIds)
-
-                const gameMap = {}
-                gameStat?.forEach(row => {
-                    gameMap[row.student_id] = true
-                })
-                setGameStatus(gameMap)
-            }
-
             setSessionReady(true)
             setLoading(false)
         }
@@ -98,84 +54,182 @@ export default function ClassroomDetails() {
         fetchData()
     }, [classDecoded])
 
+    const generateUsername = (first) =>
+        `${first.toLowerCase()}${Math.floor(100 + Math.random() * 900)}`
+
+    const generatePassword = () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'
+        return Array.from({ length: 6 }, () =>
+            chars.charAt(Math.floor(Math.random() * chars.length))
+        ).join('')
+    }
+
+    const handleCopy = (s) => {
+        const payload = `👤 ${s.name}\n🔐 username: ${s.username}\n🔐 password: ${s.password}`
+        navigator.clipboard.writeText(payload).then(() => {
+            alert(`✅ اطلاعات "${s.name}" کپی شد`)
+        }).catch(() => {
+            alert('❌ خطا در کپی کردن اطلاعات')
+        })
+    }
+
+    const handleDelete = async (id) => {
+        const confirmed = window.confirm('آیا مطمئن هستید که می‌خواهید این دانش‌آموز را حذف کنید؟')
+        if (!confirmed) return
+
+        const { error } = await supabase.from('students').delete().eq('id', id)
+        if (error) {
+            alert('❌ خطا در حذف دانش‌آموز')
+        } else {
+            setStudents(prev => prev.filter(s => s.id !== id))
+            alert('✅ دانش‌آموز حذف شد')
+        }
+    }
+
+    const handleCreateStudent = async () => {
+        const first = firstName.trim()
+        const last = lastName.trim()
+        if (!first || !last || !yearLevel || !schoolName || !teacherId) {
+            alert('اطلاعات ناقص: نام، نام خانوادگی، کلاس یا مدرسه یافت نشد')
+            return
+        }
+
+        const fullName = `${first} ${last}`
+        const username = generateUsername(first)
+        const password = generatePassword()
+
+        const payload = {
+            teacher_id: teacherId,
+            classroom: classDecoded,
+            school: schoolName,
+            year_level: yearLevel,
+            first_name: first,
+            last_name: last
+        }
+
+        const { data, error } = await supabase.functions.invoke('add_student_to_class', {
+            body: payload
+        })
+
+        if (error || !data || !data.username) {
+            alert('❌ خطا در ثبت‌نام دانش‌آموز')
+        } else {
+            setDialogOpen(false)
+            setFirstName('')
+            setLastName('')
+            setStudents(prev => [...prev, {
+                id: Math.random().toString(36).slice(2),
+                name: data.name,
+                username: data.username,
+                password: data.password,
+                school: schoolName,
+                year_level: yearLevel
+            }])
+            alert(`✅ "${data.name}" با نام کاربری "${data.username}" اضافه شد`)
+        }
+    }
+
     if (!sessionReady) {
         return (
-            <TeacherLayout>
-                <Box sx={{ textAlign: 'center', mt: 5 }}>
-                    <CircularProgress />
-                    <Typography sx={{ mt: 2 }}>🔐 در حال بررسی اعتبار ورود...</Typography>
-                </Box>
-            </TeacherLayout>
+            <Box sx={{ textAlign: 'center', mt: 5 }}>
+                <CircularProgress />
+                <Typography sx={{ mt: 2 }}>🔐 در حال بررسی اعتبار ورود...</Typography>
+            </Box>
         )
     }
 
     return (
-        <TeacherLayout>
-            <Box dir="rtl">
-                <Typography variant="h5" fontWeight="bold" gutterBottom>
-                    👩‍🏫 دانش‌آموزان کلاس {classDecoded}
-                </Typography>
+        <Box dir="rtl" sx={{ py: 4 }}>
+            <Typography variant="h5" fontWeight="bold" gutterBottom>
+                👩‍🏫 دانش‌آموزان کلاس {classDecoded}
+            </Typography>
 
-                {loading ? (
-                    <Box sx={{ textAlign: 'center', mt: 5 }}>
-                        <CircularProgress />
-                    </Box>
-                ) : students.length === 0 ? (
-                    <Typography sx={{ mt: 2 }} color="text.secondary">
-                        هیچ دانش‌آموزی در این کلاس وجود ندارد.
-                    </Typography>
-                ) : (
-                    <Paper sx={{ mt: 2, bgcolor: 'rgba(255,255,255,0.95)', borderRadius: 2, p: 2 }}>
-                        <List>
-                            {students.map((s) => (
-                                <React.Fragment key={s.id}>
-                                    <ListItem
-                                        button
-                                        secondaryAction={
-                                            <Box sx={{ display: 'flex', gap: 2 }}>
-                                                <Tooltip title="تکلیف">
-                                                    {assignmentStatus[s.id] ? (
-                                                        <CheckCircleIcon color="success" />
-                                                    ) : (
-                                                        <CancelIcon color="error" />
-                                                    )}
-                                                </Tooltip>
-                                                <Tooltip title="بازی">
-                                                    {gameStatus[s.id] ? (
-                                                        <CheckCircleIcon color="success" />
-                                                    ) : (
-                                                        <CancelIcon color="error" />
-                                                    )}
-                                                </Tooltip>
-                                            </Box>
-                                        }
-                                    >
-                                        <ListItemText
-                                            primary={s.name}
-                                            secondary={
-                                                <>
-                                                    🧑 نام کاربری: <strong>{s.username}</strong> — 🔐 رمز: <strong>{s.password}</strong><br />
-                                                    🏫 مدرسه: {s.school || 'نامشخص'}
-                                                </>
-                                            }
-                                            sx={{ textAlign: 'right' }}
-                                        />
-                                        <Box
-                                            sx={{
-                                                width: 24,
-                                                height: 24,
-                                                borderRadius: '50%',
-                                                bgcolor: s.profile_color || 'gray'
-                                            }}
-                                        />
-                                    </ListItem>
-                                    <Divider />
-                                </React.Fragment>
-                            ))}
-                        </List>
-                    </Paper>
-                )}
-            </Box>
-        </TeacherLayout>
+            <Button
+                variant="outlined"
+                sx={{ mb: 2 }}
+                startIcon={<AddIcon />}
+                onClick={() => setDialogOpen(true)}
+            >
+                افزودن دانش‌آموز
+            </Button>
+
+            {loading ? (
+                <Box sx={{ textAlign: 'center', mt: 5 }}>
+                    <CircularProgress />
+                </Box>
+            ) : students.length === 0 ? (
+                <Typography sx={{ mt: 2 }} color="text.secondary">
+                    هیچ دانش‌آموزی در این کلاس وجود ندارد.
+                </Typography>
+            ) : (
+                <Paper sx={{
+                    mt: 2,
+                    borderRadius: 3,
+                    bgcolor: 'rgba(255,255,255,0.15)',
+                    backdropFilter: 'blur(8px)',
+                    p: 2,
+                    color: '#fff'
+                }}>
+                    <List>
+                        {students.map((s) => (
+                            <React.Fragment key={s.id}>
+                                <ListItem disablePadding>
+                                    <Grid container alignItems="center" sx={{ px: 2, py: 1 }}>
+                                        <Grid item xs={1}>
+                                            <Tooltip title="حذف دانش‌آموز">
+                                                <IconButton onClick={() => handleDelete(s.id)}>
+                                                    <DeleteIcon sx={{ color: '#f00' }} />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Grid>
+                                        <Grid item xs={1}>
+                                            <Tooltip title="کپی اطلاعات">
+                                                <IconButton onClick={() => handleCopy(s)}>
+                                                    <ContentCopyIcon sx={{ color: '#fff' }} />
+                                                </IconButton>
+                                            </Tooltip>
+                                        </Grid>
+                                        <Grid item xs={10}>
+                                            <ListItemText
+                                                primary={s.name}
+                                                secondary={
+                                                    <>
+                                                        🧑 نام کاربری: <strong>{s.username}</strong> — 🔐 رمز: <strong>{s.password}</strong><br />
+                                                        🏫 مدرسه: {s.school || 'نامشخص'} — 📚 پایه: {s.year_level || 'ثبت نشده'}
+                                                    </>
+                                                }
+                                                sx={{ textAlign: 'right' }}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                </ListItem>
+                                <Divider sx={{ borderColor: 'rgba(255,255,255,0.3)' }} />
+                            </React.Fragment>
+                        ))}
+                    </List>
+                </Paper>
+            )}
+
+            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm" dir="rtl">
+                <DialogTitle>➕ افزودن دانش‌آموز جدید</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        fullWidth label="نام"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        sx={{ mb: 2 }}
+                    />
+                    <TextField
+                        fullWidth label="نام خانوادگی"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        sx={{ mb: 3 }}
+                    />
+                    <Button variant="contained" fullWidth onClick={handleCreateStudent}>
+                        ثبت دانش‌آموز
+                    </Button>
+                </DialogContent>
+            </Dialog>
+        </Box>
     )
 }

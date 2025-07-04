@@ -8,7 +8,6 @@ import { AdapterMomentJalaali } from '@mui/x-date-pickers/AdapterMomentJalaali'
 import moment from 'moment-jalaali'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-import TeacherLayout from '../components/TeacherLayout'
 
 moment.loadPersian({ dialect: 'persian-modern' })
 
@@ -63,19 +62,17 @@ export default function NewAssignmentForm() {
             }
         }
 
-        const { data, error } = await supabase.from('assignments').insert([
-            {
-                title,
-                classroom,
-                teacher_id: uid,
-                description,
-                type: 'quiz',
-                max_attempts: Number(maxAttempts),
-                due_at: dueDate ? dueDate.toDate().toISOString() : null,
-                is_active: isActive,
-                created_at: new Date().toISOString()
-            }
-        ])
+        const { data, error } = await supabase.from('assignments').insert([{
+            title,
+            classroom,
+            teacher_id: uid,
+            description,
+            type: 'quiz',
+            max_attempts: Number(maxAttempts),
+            due_at: dueDate ? dueDate.toDate().toISOString() : null,
+            is_active: isActive,
+            created_at: new Date().toISOString()
+        }])
 
         if (error) {
             console.error('assignment insert error:', error)
@@ -95,89 +92,93 @@ export default function NewAssignmentForm() {
     }
 
     return (
-        <TeacherLayout>
-            <Box dir="rtl" sx={{ maxWidth: 700, mx: 'auto' }}>
-                <Typography variant="h5" fontWeight="bold" gutterBottom>
-                    📝 ساخت تکلیف جدید
-                </Typography>
-                <Paper sx={{ p: 3 }}>
-                    <TextField
-                        label="عنوان تکلیف"
-                        fullWidth
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        sx={{ mb: 2 }}
-                    />
-                    <TextField
-                        label="توضیحات"
-                        fullWidth
-                        multiline
-                        rows={2}
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        sx={{ mb: 2 }}
-                    />
-                    <TextField
-                        label="کلاس"
-                        fullWidth
-                        select
-                        value={classroom}
-                        onChange={(e) => setClassroom(e.target.value)}
-                        sx={{ mb: 2 }}
-                    >
-                        {classrooms.map((c, i) => (
-                            <MenuItem key={i} value={c}>{c}</MenuItem>
-                        ))}
-                        {classroom && !classrooms.includes(classroom) && (
-                            <MenuItem value={classroom}>{`➕ ایجاد کلاس جدید: ${classroom}`}</MenuItem>
-                        )}
-                    </TextField>
-
-                    <LocalizationProvider dateAdapter={AdapterMomentJalaali}>
-                        <DatePicker
-                            label="تاریخ تحویل (تقویم شمسی)"
-                            value={dueDate}
-                            onChange={(newDate) => setDueDate(newDate)}
-                            renderInput={(params) => (
-                                <TextField {...params} fullWidth sx={{ mb: 2 }} />
-                            )}
-                        />
-                    </LocalizationProvider>
-
-                    <TextField
-                        label="حداکثر تلاش"
-                        type="number"
-                        fullWidth
-                        inputProps={{ min: 1, max: 10 }}
-                        value={maxAttempts}
-                        onChange={(e) => setMaxAttempts(e.target.value)}
-                        sx={{ mb: 2 }}
-                    />
-
-                    <FormControlLabel
-                        control={<Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />}
-                        label="فعال‌سازی این تکلیف برای دانش‌آموزان"
-                    />
-
-                    {message && (
-                        <Alert
-                            severity={message.includes('✅') ? 'success' : 'error'}
-                            sx={{ my: 2 }}
-                        >
-                            {message}
-                        </Alert>
+        <Box dir="rtl" sx={{ maxWidth: 700, mx: 'auto', py: 4 }}>
+            <Typography variant="h5" fontWeight="bold" gutterBottom>
+                📝 ساخت تکلیف جدید
+            </Typography>
+            <Paper sx={{
+                p: 3,
+                bgcolor: 'rgba(255,255,255,0.15)',
+                backdropFilter: 'blur(8px)',
+                borderRadius: 4,
+                color: '#fff'
+            }}>
+                <TextField
+                    label="عنوان تکلیف"
+                    fullWidth
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    sx={{ mb: 2 }}
+                />
+                <TextField
+                    label="توضیحات"
+                    fullWidth
+                    multiline
+                    rows={2}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    sx={{ mb: 2 }}
+                />
+                <TextField
+                    label="کلاس"
+                    fullWidth
+                    select
+                    value={classroom}
+                    onChange={(e) => setClassroom(e.target.value)}
+                    sx={{ mb: 2 }}
+                >
+                    {classrooms.map((c, i) => (
+                        <MenuItem key={i} value={c}>{c}</MenuItem>
+                    ))}
+                    {classroom && !classrooms.includes(classroom) && (
+                        <MenuItem value={classroom}>{`➕ ایجاد کلاس جدید: ${classroom}`}</MenuItem>
                     )}
+                </TextField>
 
-                    <Divider sx={{ my: 2 }} />
-                    <Button
-                        variant="contained"
-                        disabled={loading || !title || !classroom}
-                        onClick={handleSave}
+                <LocalizationProvider dateAdapter={AdapterMomentJalaali}>
+                    <DatePicker
+                        label="تاریخ تحویل (تقویم شمسی)"
+                        value={dueDate}
+                        onChange={(newDate) => setDueDate(newDate)}
+                        renderInput={(params) => (
+                            <TextField {...params} fullWidth sx={{ mb: 2 }} />
+                        )}
+                    />
+                </LocalizationProvider>
+
+                <TextField
+                    label="حداکثر تلاش"
+                    type="number"
+                    fullWidth
+                    inputProps={{ min: 1, max: 10 }}
+                    value={maxAttempts}
+                    onChange={(e) => setMaxAttempts(e.target.value)}
+                    sx={{ mb: 2 }}
+                />
+
+                <FormControlLabel
+                    control={<Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />}
+                    label="فعال‌سازی این تکلیف برای دانش‌آموزان"
+                />
+
+                {message && (
+                    <Alert
+                        severity={message.includes('✅') ? 'success' : 'error'}
+                        sx={{ my: 2 }}
                     >
-                        {loading ? 'در حال ذخیره...' : 'ثبت نهایی تکلیف'}
-                    </Button>
-                </Paper>
-            </Box>
-        </TeacherLayout>
+                        {message}
+                    </Alert>
+                )}
+
+                <Divider sx={{ my: 2 }} />
+                <Button
+                    variant="contained"
+                    disabled={loading || !title || !classroom}
+                    onClick={handleSave}
+                >
+                    {loading ? 'در حال ذخیره...' : 'ثبت نهایی تکلیف'}
+                </Button>
+            </Paper>
+        </Box>
     )
 }

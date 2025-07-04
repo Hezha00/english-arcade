@@ -1,79 +1,109 @@
 import React, { useEffect, useState } from 'react'
 import {
-    Box, Typography, Button, Card, CardContent, Grid, CircularProgress
+    Container, Typography, Paper, List, ListItem,
+    ListItemText, Button, Divider, CircularProgress,
+    Grid, Box
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
-import TeacherLayout from '../components/TeacherLayout'
 import { useNavigate } from 'react-router-dom'
-import dayjs from 'dayjs'
-import jalaliday from 'jalaliday'
-
-dayjs.extend(jalaliday)
 
 export default function TeacherGamesDashboard() {
-    const [games, setGames] = useState([])
+    const [downloads, setDownloads] = useState([])
     const [loading, setLoading] = useState(true)
     const navigate = useNavigate()
 
     useEffect(() => {
-        const fetchGames = async () => {
-            const { data: auth } = await supabase.auth.getUser()
-            const uid = auth?.user?.id
+        const fetchDownloads = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user?.id) return
 
-            const { data: teacherGames } = await supabase
-                .from('games')
+            const { data, error } = await supabase
+                .from('downloaded_games')
                 .select('*')
-                .eq('teacher_id', uid)
-                .order('created_at', { ascending: false })
+                .eq('teacher_id', user.id)
+                .order('downloaded_at', { ascending: false })
 
-            setGames(teacherGames || [])
+            if (error) console.error(error)
+            setDownloads(data || [])
             setLoading(false)
         }
 
-        fetchGames()
+        fetchDownloads()
     }, [])
 
+    const handleCreateGame = (template) => {
+        navigate('/create-game', {
+            state: {
+                templateName: template.template_name,
+                fileUrl: template.file_url
+            }
+        })
+    }
+
+    if (loading) return <CircularProgress sx={{ mt: 10 }} />
+
     return (
-        <TeacherLayout>
-            <Box dir="rtl">
-                <Typography variant="h5" fontWeight="bold" gutterBottom>
-                    🎮 بازی‌های اختصاص داده‌شده
-                </Typography>
+        <Container dir="rtl" sx={{ py: 4, mt: { xs: 10, md: 1 } }}>
+            <Box
+                dir="rtl"
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    transform: 'translateX(250px)',
+                    mt: -5
+                }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h5" fontWeight="bold">🎮 بازی‌های من</Typography>
+                </Box>
 
                 <Button
-                    variant="contained"
-                    onClick={() => navigate('/game-repository')}
-                    sx={{ mt: 2, mb: 3 }}
+                    variant="outlined"
+                    sx={{ mb: 3 }}
+                    onClick={() => navigate('/game-store')}
                 >
-                    افزودن بازی جدید
+                    رفتن به فروشگاه بازی‌ها
                 </Button>
 
-                {loading ? (
-                    <CircularProgress />
-                ) : games.length === 0 ? (
-                    <Typography>هیچ بازی‌ای اختصاص داده نشده است.</Typography>
-                ) : (
-                    <Grid container spacing={2}>
-                        {games.map((game) => (
-                            <Grid item xs={12} sm={6} md={4} key={game.id}>
-                                <Card>
-                                    <CardContent>
-                                        <Typography variant="subtitle1" fontWeight="bold">
-                                            {game.name}
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ mb: 1 }}>
-                                            {game.description || 'بدون توضیحات'}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            افزوده‌شده: {dayjs(game.created_at).calendar('jalali').format('YYYY/MM/DD')}
-                                        </Typography>
-                                    </CardContent>
-                                </Card>
-                            </Grid>
-                        ))}
-                    </Grid>
-                )}
+                <Paper
+                    sx={{
+                        p: 3,
+                        borderRadius: 4,
+                        bgcolor: 'rgba(255,255,255,0.15)',
+                        backdropFilter: 'blur(8px)',
+                        color: '#fff'
+                    }}
+                >
+                    {downloads.length === 0 ? (
+                        <Typography color="text.secondary">📭 هنوز هیچ بازی‌ای دانلود نشده</Typography>
+                    ) : (
+                        <List>
+                            {downloads.map((template, i) => (
+                                <React.Fragment key={template.id}>
+                                    <ListItem>
+                                        <Grid container alignItems="center" spacing={2}>
+                                            <Grid item xs={9}>
+                                                <ListItemText
+                                                    primary={template.template_name}
+                                                    secondary={`دانلود شده در: ${new Date(template.downloaded_at).toLocaleDateString('fa-IR')}`}
+                                                    sx={{ textAlign: 'right' }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                <Button variant="contained" fullWidth onClick={() => handleCreateGame(template)}>
+                                                    ساخت بازی
+                                                </Button>
+                                            </Grid>
+                                        </Grid>
+                                    </ListItem>
+                                    {i < downloads.length - 1 && <Divider sx={{ my: 1 }} />}
+                                </React.Fragment>
+                            ))}
+                        </List>
+                    )}
+                </Paper>
             </Box>
-        </TeacherLayout>
+        </Container>
     )
 }

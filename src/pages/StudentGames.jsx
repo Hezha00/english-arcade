@@ -1,11 +1,21 @@
 import React, { useEffect, useState } from 'react'
 import {
-    Typography, Container, List, ListItem, ListItemText, Divider,
-    Button, Box, CircularProgress
+    Container,
+    Typography,
+    Box,
+    Paper,
+    List,
+    ListItem,
+    ListItemText,
+    Button,
+    Chip,
+    Divider,
+    CircularProgress
 } from '@mui/material'
+import SportsEsportsIcon from '@mui/icons-material/SportsEsports'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
-import StudentAppWrapper from '../layouts/StudentAppWrapper'
+import moment from 'moment-jalaali'
 
 export default function StudentGames() {
     const [games, setGames] = useState([])
@@ -15,131 +25,78 @@ export default function StudentGames() {
 
     useEffect(() => {
         const saved = localStorage.getItem('student')
-        if (!saved) navigate('/student-login')
-        else setStudent(JSON.parse(saved))
-    }, [])
+        if (saved) setStudent(JSON.parse(saved))
+        else navigate('/student-login')
+    }, [navigate])
 
     useEffect(() => {
-        if (student) fetchGames()
-    }, [student])
+        const fetchGames = async () => {
+            if (!student?.id) return
+            const { data, error } = await supabase
+                .from('game_assignments')
+                .select('game_id, classroom, games(name), expires_at')
+                .eq('classroom', student.classroom)
 
-    const fetchGames = async () => {
-        const { data, error } = await supabase
-            .from('games')
-            .select('*')
-            .order('created_at', { ascending: false })
-
-        if (error || !data) return
-
-        const filtered = data.filter(g =>
-            g.is_global || g.name.includes(student.classroom)
-        )
-
-        setGames(filtered)
-        setLoading(false)
-    }
-
-    const handlePlayGame = async (game) => {
-        const gameUrl = game.file_url
-        const assignmentId = game.assignment_id || game.id
-
-        // ⏱️ Start a timer
-        const startTime = Date.now()
-
-        // ✅ Check if result already exists
-        const { data: existing } = await supabase
-            .from('results')
-            .select('id, finished')
-            .eq('student_id', student.id)
-            .eq('assignment_id', assignmentId)
-            .maybeSingle()
-
-        if (!existing) {
-            await supabase.from('results').insert([
-                {
-                    student_id: student.id,
-                    assignment_id: assignmentId,
-                    finished: false,
-                    type: 'game'
-                }
-            ])
+            if (error) console.error(error)
+            setGames(data || [])
+            setLoading(false)
         }
 
-        // 🎮 Open game
-        const gameWindow = window.open(gameUrl, '_blank', 'noopener,noreferrer')
+        fetchGames()
+    }, [student])
 
-        // 🕒 Polling until window is closed
-        const checkWindowClosed = setInterval(async () => {
-            if (gameWindow?.closed) {
-                clearInterval(checkWindowClosed)
-
-                const endTime = Date.now()
-                const duration = Math.floor((endTime - startTime) / 1000)
-
-                const confirmDone = window.confirm('آیا بازی را به پایان رساندید؟')
-
-                if (confirmDone) {
-                    await supabase
-                        .from('results')
-                        .update({ finished: true, time_taken: duration, score: 100 })
-                        .eq('student_id', student.id)
-                        .eq('assignment_id', assignmentId)
-                }
-            }
-        }, 1000)
-    }
+    if (!student || loading) return <CircularProgress sx={{ mt: 10 }} />
 
     return (
-        <StudentAppWrapper profileColor={student?.profile_color}>
-            <Box
-                sx={{
-                    minHeight: '100vh',
-                    backgroundImage: 'url("/bg.png")',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                    py: 8,
-                    px: 2
-                }}
-            >
-                <Container dir="rtl">
-                    <Typography variant="h4" fontWeight="bold" color="#fff" gutterBottom>
-                        🎮 بازی‌های شما
-                    </Typography>
+        <Box
+            sx={{
+                background: 'url(/bg.png)',
+                minHeight: '100vh',
+                py: 8,
+                px: 2
+            }}
+        >
+            <Container dir="rtl" maxWidth="md">
+                <Typography variant="h4" fontWeight="bold" color="#fff" gutterBottom>
+                    بازی‌های قابل انجام
+                </Typography>
 
-                    {loading ? (
-                        <Box textAlign="center" mt={4}><CircularProgress /></Box>
-                    ) : games.length === 0 ? (
-                        <Typography sx={{ mt: 3 }} variant="body1">
-                            📭 هیچ بازی‌ای در حال حاضر فعال نیست.
+                <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.95)' }}>
+                    {games.length === 0 ? (
+                        <Typography color="text.secondary">
+                            📭 هیچ بازی‌ای برای کلاس شما اختصاص داده نشده
                         </Typography>
                     ) : (
-                        <List sx={{ mt: 2, bgcolor: 'rgba(255,255,255,0.9)', borderRadius: 3 }}>
-                            {games.map(game => (
-                                <React.Fragment key={game.id}>
+                        <List>
+                            {games.map((g, i) => (
+                                <React.Fragment key={i}>
                                     <ListItem
                                         secondaryAction={
                                             <Button
-                                                variant="outlined"
-                                                onClick={() => handlePlayGame(game)}
+                                                variant="contained"
+                                                onClick={() => navigate(`/student-quiz/${g.game_id}`)}
                                             >
-                                                اجرا
+                                                شروع بازی
                                             </Button>
                                         }
                                     >
+                                        <SportsEsportsIcon style={{ marginLeft: 8, color: '#4f46e5' }} />
                                         <ListItemText
-                                            primary={game.name}
-                                            secondary={game.description || 'بدون توضیح'}
-                                            sx={{ textAlign: 'right' }}
+                                            primary={g.games?.name || '---'}
+                                            secondary={`کلاس: ${g.classroom} | ضرب‌العجل: ${g.expires_at
+                                                    ? moment(g.expires_at).format('jYYYY/jMM/jDD HH:mm')
+                                                    : '---'
+                                                }`}
                                         />
+                                        <Chip label="فعال" color="success" />
                                     </ListItem>
-                                    <Divider />
+                                    {i < games.length - 1 && <Divider sx={{ my: 1 }} />}
                                 </React.Fragment>
                             ))}
                         </List>
                     )}
-                </Container>
-            </Box>
-        </StudentAppWrapper>
+                </Paper>
+            </Container>
+        </Box>
     )
 }

@@ -5,7 +5,6 @@ import {
     Box, LinearProgress
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
-import TeacherLayout from '../components/TeacherLayout'
 
 export default function TeacherAnalytics() {
     const [classrooms, setClassrooms] = useState([])
@@ -67,11 +66,22 @@ export default function TeacherAnalytics() {
     }
 
     return (
-        <TeacherLayout>
-            <Container dir="rtl" sx={{ mt: 4 }}>
-                <Typography variant="h5" gutterBottom>
-                    📊 داشبورد تحلیلی کلاس
-                </Typography>
+        <Container dir="rtl" sx={{ mt: { xs: 6, md: 1 } }}>
+            <Box
+                dir="rtl"
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    transform: 'translateX(250px)',
+                    mt: -2
+                }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h5" fontWeight="bold">
+                        📊 داشبورد تحلیلی کلاس
+                    </Typography>
+                </Box>
 
                 <FormControl fullWidth sx={{ my: 3 }}>
                     <InputLabel>کلاس</InputLabel>
@@ -89,11 +99,30 @@ export default function TeacherAnalytics() {
                     <LinearProgress />
                 ) : (
                     <>
-                        <Paper sx={{ p: 3, mb: 4 }}>
-                            <Typography variant="h6">میانگین نمرات کلاس: {classroomAverage()}</Typography>
+                        <Paper
+                            sx={{
+                                p: 3,
+                                mb: 4,
+                                borderRadius: 4,
+                                bgcolor: 'rgba(255,255,255,0.15)',
+                                backdropFilter: 'blur(8px)',
+                                color: '#fff'
+                            }}
+                        >
+                            <Typography variant="h6">
+                                میانگین نمرات کلاس: {classroomAverage()}
+                            </Typography>
                         </Paper>
 
-                        <Paper sx={{ p: 3 }}>
+                        <Paper
+                            sx={{
+                                p: 3,
+                                borderRadius: 4,
+                                bgcolor: 'rgba(255,255,255,0.15)',
+                                backdropFilter: 'blur(8px)',
+                                color: '#fff'
+                            }}
+                        >
                             <Typography variant="h6" gutterBottom>
                                 🔝 ۵ دانش‌آموز برتر
                             </Typography>
@@ -118,7 +147,7 @@ export default function TeacherAnalytics() {
                         </Paper>
                     </>
                 )}
-            </Container>
-        </TeacherLayout>
+            </Box>
+        </Container>
     )
 }

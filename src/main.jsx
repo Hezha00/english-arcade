@@ -2,6 +2,17 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
+// 🌈 Animation init
+import AOS from 'aos'
+import 'aos/dist/aos.css'
+AOS.init({ duration: 600, once: true })
+
+// Layouts
+import TeacherLayout from './components/TeacherLayout'
+import StudentAppWrapper from './layouts/StudentAppWrapper'
+import ProtectedRoute from './ProtectedRoute'
+import SessionGuard from './SessionGuard'
+
 // Student pages
 import LandingScreen from './pages/LandingScreen'
 import StudentLogin from './pages/StudentLogin'
@@ -35,27 +46,64 @@ import AssignGame from './pages/AssignGame'
 import TeacherAssignments from './pages/TeacherAssignments'
 import NewAssignmentForm from './pages/NewAssignmentForm'
 import TeacherDashboard from './pages/TeacherDashboard'
-
-// Layouts
-import TeacherLayout from './components/TeacherLayout'
-import ProtectedRoute from './ProtectedRoute'
-import SessionGuard from './SessionGuard' // ✅ NEW
+import CreateGame from './pages/CreateGame'
+import GameStore from './pages/GameStore'
 
 import './index.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root'))
+const student = JSON.parse(localStorage.getItem('student'))
 
 root.render(
   <BrowserRouter>
     <Routes>
-      {/* 🔸 Public */}
+      {/* 🔸 Public Routes */}
       <Route path="/" element={<LandingScreen />} />
       <Route path="/student-login" element={<StudentLogin />} />
-      <Route path="/student-dashboard" element={<StudentDashboard />} />
-      <Route path="/student-assignments" element={<StudentAssignments />} />
-      <Route path="/student-quiz/:assignmentId" element={<StudentQuiz />} />
-      <Route path="/student-results" element={<StudentResultsHistory />} />
-      <Route path="/student-games" element={<StudentGames />} />
+
+      {/* 👨‍🎓 Student Dashboard Routes with layout wrapper */}
+      <Route
+        path="/student-dashboard"
+        element={
+          <StudentAppWrapper student={student}>
+            <StudentDashboard />
+          </StudentAppWrapper>
+        }
+      />
+      <Route
+        path="/student-assignments"
+        element={
+          <StudentAppWrapper student={student}>
+            <StudentAssignments />
+          </StudentAppWrapper>
+        }
+      />
+      <Route
+        path="/student-quiz/:assignmentId"
+        element={
+          <StudentAppWrapper student={student}>
+            <StudentQuiz />
+          </StudentAppWrapper>
+        }
+      />
+      <Route
+        path="/student-results"
+        element={
+          <StudentAppWrapper student={student}>
+            <StudentResultsHistory />
+          </StudentAppWrapper>
+        }
+      />
+      <Route
+        path="/student-games"
+        element={
+          <StudentAppWrapper student={student}>
+            <StudentGames />
+          </StudentAppWrapper>
+        }
+      />
+
+      {/* 🧑‍🏫 Teacher Public Auth */}
       <Route path="/teacher-login" element={<TeacherAuth />} />
       <Route path="/teacher-signup" element={<TeacherSignup />} />
       <Route path="/teacher-subscription" element={<TeacherSubscription />} />
@@ -135,12 +183,36 @@ root.render(
         }
       />
       <Route
+        path="/game-store"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <GameStore />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
         path="/assign-game/:gameId"
         element={
           <SessionGuard>
             <ProtectedRoute>
               <TeacherLayout>
                 <AssignGame />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/create-game"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <CreateGame />
               </TeacherLayout>
             </ProtectedRoute>
           </SessionGuard>

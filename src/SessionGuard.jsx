@@ -1,35 +1,35 @@
-import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+// SessionGuard.jsx
+import React, { useEffect, useState } from 'react'
+import { Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
+import CircularProgress from '@mui/material/CircularProgress'
+import Box from '@mui/material/Box'
 
 export default function SessionGuard({ children }) {
-    const [loading, setLoading] = useState(true)
-    const [session, setSession] = useState(null)
-    const navigate = useNavigate()
+    const [sessionChecked, setSessionChecked] = useState(false)
+    const [authed, setAuthed] = useState(false)
 
     useEffect(() => {
-        const restoreSession = async () => {
-            const { data: sessionData } = await supabase.auth.getSession()
-            if (!sessionData?.session) {
-                navigate('/teacher-login')
-                return
-            }
-            setSession(sessionData.session)
-            setLoading(false)
+        const verifySession = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            setAuthed(!!user)
+            setSessionChecked(true)
         }
 
-        restoreSession()
+        verifySession()
+    }, [])
 
-        const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session || null)
-        })
+    if (!sessionChecked) {
+        return (
+            <Box sx={{ mt: 10, textAlign: 'center' }}>
+                <CircularProgress />
+            </Box>
+        )
+    }
 
-        return () => {
-            listener?.subscription?.unsubscribe()
-        }
-    }, [navigate])
+    if (!authed) {
+        return <Navigate to="/teacher-auth" replace />
+    }
 
-    if (loading) return <div style={{ textAlign: 'center', marginTop: '50px' }}>🔐 در حال بررسی ورود...</div>
-
-    return <>{children}</>
+    return children
 }

@@ -1,125 +1,133 @@
-// Use this updated version of AssignGame.jsx
 import React, { useEffect, useState } from 'react'
 import {
-    Box, Typography, TextField, MenuItem, Button, Paper, Alert
+    Container, Typography, Paper, List, ListItem, ListItemText,
+    Button, Divider, CircularProgress, Box, Grid
 } from '@mui/material'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-import TeacherLayout from '../components/TeacherLayout'
-import dayjs from 'dayjs'
+import { DatePicker } from 'zaman'
 
 export default function AssignGame() {
     const { gameId } = useParams()
     const [classrooms, setClassrooms] = useState([])
-    const [selectedClass, setSelectedClass] = useState('')
-    const [duration, setDuration] = useState('')
-    const [maxRetries, setMaxRetries] = useState(1)
-    const [deadline, setDeadline] = useState('')
-    const [message, setMessage] = useState('')
-    const navigate = useNavigate()
+    const [gameName, setGameName] = useState('')
+    const [selectedDate, setSelectedDate] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [teacherId, setTeacherId] = useState(null)
 
     useEffect(() => {
-        const fetchClasses = async () => {
-            const { data: auth } = await supabase.auth.getUser()
-            const uid = auth?.user?.id
+        const fetchData = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user?.id) setTeacherId(user.id)
+
+            const { data: game } = await supabase
+                .from('games')
+                .select('name')
+                .eq('id', gameId)
+                .single()
 
             const { data: students } = await supabase
                 .from('students')
                 .select('classroom')
-                .eq('teacher_id', uid)
+                .not('classroom', 'is', null)
 
-            const unique = [...new Set(students.map(s => s.classroom))]
-            setClassrooms(unique)
+            const uniqueClasses = [...new Set(students.map(s => s.classroom))]
+
+            setGameName(game?.name || '')
+            setClassrooms(uniqueClasses)
+            setLoading(false)
         }
 
-        fetchClasses()
-    }, [])
+        fetchData()
+    }, [gameId])
 
-    const handleAssign = async () => {
-        const { data: auth } = await supabase.auth.getUser()
-        const uid = auth?.user?.id
+    const handleAssign = async (classroom) => {
+        if (!selectedDate) {
+            alert('📅 لطفاً تاریخ ضرب‌العجل را انتخاب کنید')
+            return
+        }
 
-        const res = await supabase.from('games').insert([
-            {
-                name: gameId.replace('.html', ''),
-                description: `برای کلاس ${selectedClass}`,
-                file_url: `/games/${gameId}`,
-                teacher_id: uid,
-                classroom: selectedClass,
-                is_global: false,
-                created_at: new Date().toISOString(),
-                duration_min: duration ? parseInt(duration) : null,
-                max_retries: maxRetries ? parseInt(maxRetries) : null,
-                expires_at: deadline || null
-            }
-        ])
+        if (!teacherId) {
+            alert('❌ حساب کاربری یافت نشد')
+            return
+        }
 
-        if (res.error) {
-            setMessage('❌ ذخیره نشد')
+        const { error } = await supabase.from('game_assignments').insert({
+            game_id: gameId,
+            classroom,
+            teacher_id: teacherId,
+            assigned_at: new Date().toISOString()
+        })
+
+        if (error) {
+            console.error('Supabase error:', error)
+            alert('❌ خطا در اختصاص بازی: ' + error.message)
         } else {
-            setMessage('✅ بازی اختصاص داده شد')
-            setTimeout(() => navigate('/teacher-games'), 1500)
+            alert(`✅ بازی "${gameName}" به کلاس "${classroom}" اختصاص یافت`)
         }
     }
 
+    if (loading) return <CircularProgress sx={{ mt: 10 }} />
+
     return (
-        <TeacherLayout>
-            <Box dir="rtl" sx={{ maxWidth: 500, mx: 'auto' }}>
+        <Container dir="rtl" sx={{ py: 4, mt: { xs: 10, md: 12 } }}>
+            <Box sx={{ mb: 4 }}>
                 <Typography variant="h5" fontWeight="bold" gutterBottom>
-                    🎯 اختصاص بازی: {gameId}
+                    🎮 اختصاص بازی: {gameName}
                 </Typography>
+            </Box>
 
-                <Paper sx={{ p: 3, mt: 2 }}>
-                    <TextField
-                        fullWidth
-                        select
-                        label="کلاس"
-                        value={selectedClass}
-                        onChange={(e) => setSelectedClass(e.target.value)}
-                        sx={{ mb: 2 }}
-                    >
-                        {classrooms.map((c, i) => (
-                            <MenuItem key={i} value={c}>{c}</MenuItem>
-                        ))}
-                    </TextField>
-
-                    <TextField
-                        fullWidth
-                        label="مدت بازی (دقیقه)"
-                        type="number"
-                        value={duration}
-                        onChange={(e) => setDuration(e.target.value)}
-                        sx={{ mb: 2 }}
+            <Box sx={{ mb: 4 }}>
+                <Paper sx={{ p: 3 }}>
+                    <Typography variant="subtitle1" gutterBottom>📅 تاریخ ضرب‌العجل</Typography>
+                    <DatePicker
+                        onChange={(e) => setSelectedDate(e.value)}
+                        locale="fa"
+                        calendarType="jalali"
+                        hasTime
+                        round="x2"
+                        accentColor="#4f46e5"
+                        direction="rtl"
                     />
-                    <TextField
-                        fullWidth
-                        label="حداکثر دفعات تکرار"
-                        type="number"
-                        value={maxRetries}
-                        onChange={(e) => setMaxRetries(e.target.value)}
-                        sx={{ mb: 2 }}
-                    />
-                    <TextField
-                        fullWidth
-                        label="ضرب‌العجل"
-                        type="datetime-local"
-                        value={deadline}
-                        onChange={(e) => setDeadline(e.target.value)}
-                        sx={{ mb: 2 }}
-                        InputLabelProps={{ shrink: true }}
-                    />
-
-                    {message && (
-                        <Alert severity={message.includes('✅') ? 'success' : 'error'} sx={{ mb: 2 }}>
-                            {message}
-                        </Alert>
-                    )}
-
-                    <Button variant="contained" onClick={handleAssign} disabled={!selectedClass}>
-                        ذخیره و اختصاص
-                    </Button>
                 </Paper>
             </Box>
-        </TeacherLayout>
+
+            <Box>
+                <Typography variant="h6" gutterBottom>📚 لیست کلاس‌ها</Typography>
+                <Paper sx={{ p: 3 }}>
+                    {classrooms.length === 0 ? (
+                        <Typography color="text.secondary">هیچ کلاسی برای نمایش وجود ندارد</Typography>
+                    ) : (
+                        <List>
+                            {classrooms.map((classroom, i) => (
+                                <React.Fragment key={i}>
+                                    <ListItem>
+                                        <Grid container alignItems="center" spacing={2}>
+                                            <Grid item xs={9}>
+                                                <ListItemText
+                                                    primary={`کلاس: ${classroom}`}
+                                                    secondary={`بازی: ${gameName}`}
+                                                    sx={{ textAlign: 'right' }}
+                                                />
+                                            </Grid>
+                                            <Grid item xs={3}>
+                                                <Button
+                                                    variant="contained"
+                                                    fullWidth
+                                                    onClick={() => handleAssign(classroom)}
+                                                >
+                                                    اختصاص
+                                                </Button>
+                                            </Grid>
+                                        </Grid>
+                                    </ListItem>
+                                    {i < classrooms.length - 1 && <Divider sx={{ my: 1 }} />}
+                                </React.Fragment>
+                            ))}
+                        </List>
+                    )}
+                </Paper>
+            </Box>
+        </Container>
     )
 }

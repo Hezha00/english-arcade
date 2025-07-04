@@ -1,5 +1,3 @@
-
-import StudentAppWrapper from '../layouts/StudentAppWrapper'
 import React, { useEffect, useState } from 'react'
 import {
     Typography, Box, TextField, Button, MenuItem, Select, InputLabel,
@@ -9,7 +7,6 @@ import DeleteIcon from '@mui/icons-material/Delete'
 import EditIcon from '@mui/icons-material/Edit'
 import SaveIcon from '@mui/icons-material/Save'
 import { supabase } from '../supabaseClient'
-import TeacherLayout from '../components/TeacherLayout'
 import * as XLSX from 'xlsx'
 import { saveAs } from 'file-saver'
 
@@ -49,20 +46,17 @@ export default function Students() {
     const handleAdd = async () => {
         const { data: session } = await supabase.auth.getUser()
         const teacherId = session.user.id
-
         const { username, password, school, year, classroom, profileColor } = form
 
-        const { error } = await supabase.from('students').insert([
-            {
-                username,
-                password,
-                school,
-                year_level: year,
-                classroom,
-                profile_color: profileColor,
-                teacher_id: teacherId
-            }
-        ])
+        const { error } = await supabase.from('students').insert([{
+            username,
+            password,
+            school,
+            year_level: year,
+            classroom,
+            profile_color: profileColor,
+            teacher_id: teacherId
+        }])
 
         if (!error) {
             setForm({ username: '', password: '', school: '', year: '', classroom: '', profileColor: '' })
@@ -103,10 +97,8 @@ export default function Students() {
     }
 
     return (
-        <TeacherLayout>
-            <Typography variant="h6" gutterBottom>
-                دانش‌آموزان من
-            </Typography>
+        <Box sx={{ p: 3 }}>
+            <Typography variant="h6" gutterBottom>دانش‌آموزان من</Typography>
 
             <Box sx={{ mb: 4 }}>
                 <TextField label="نام کاربری" fullWidth margin="normal" value={form.username}
@@ -119,12 +111,20 @@ export default function Students() {
                     onChange={(e) => setForm({ ...form, year: e.target.value })} />
                 <FormControl fullWidth margin="normal">
                     <InputLabel>کلاس</InputLabel>
-                    <Select value={form.classroom}
+                    <Select
+                        value={form.classroom}
                         onChange={(e) => setForm({ ...form, classroom: e.target.value })}
-                        label="کلاس">
+                        onBlur={(e) => setForm({ ...form, classroom: e.target.value })}
+                        label="کلاس"
+                    >
                         {classrooms.map((cls) => (
                             <MenuItem key={cls.id} value={cls.name}>{cls.name}</MenuItem>
                         ))}
+                        {form.classroom && !classrooms.find(c => c.name === form.classroom) && (
+                            <MenuItem value={form.classroom}>
+                                ➕ ایجاد کلاس جدید: {form.classroom}
+                            </MenuItem>
+                        )}
                     </Select>
                 </FormControl>
                 <TextField label="رنگ پروفایل (Hex)" fullWidth margin="normal" placeholder="#aabbcc"
@@ -197,6 +197,6 @@ export default function Students() {
                     </React.Fragment>
                 ))}
             </List>
-        </TeacherLayout>
+        </Box>
     )
 }

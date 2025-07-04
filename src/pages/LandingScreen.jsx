@@ -20,25 +20,28 @@ export default function LandingScreen() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                px: 2
+                px: 2,
+                background: 'none', // Let index.css handle background
+                color: '#fff'
             }}
         >
             <Container maxWidth="xs" dir="rtl">
                 <Paper
-                    elevation={4}
+                    elevation={0}
                     sx={{
                         p: 4,
                         textAlign: 'center',
                         borderRadius: 4,
-                        bgcolor: 'rgba(255, 255, 255, 0.85)',
-                        backdropFilter: 'blur(6px)'
+                        bgcolor: 'rgba(255,255,255,0.15)',
+                        backdropFilter: 'blur(8px)',
+                        color: '#fff'
                     }}
                 >
                     <Typography variant="h4" fontWeight="bold" sx={{ mb: 2 }}>
                         English Arcade
                     </Typography>
 
-                    <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+                    <Typography variant="body1" color="#ddd" sx={{ mb: 4 }}>
                         لطفاً نقش خود را انتخاب کنید
                     </Typography>
 
@@ -75,10 +78,11 @@ export default function LandingScreen() {
                             py: 1.5,
                             fontWeight: 600,
                             borderRadius: 2,
-                            transition: 'all 0.3s ease',
+                            color: '#fff',
+                            borderColor: '#aaa',
                             '&:hover': {
-                                backgroundColor: '#e0e7ff',
-                                borderColor: '#6366f1',
+                                backgroundColor: 'rgba(255,255,255,0.1)',
+                                borderColor: '#fff',
                                 transform: 'scale(1.03)'
                             }
                         }}

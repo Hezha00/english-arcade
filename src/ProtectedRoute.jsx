@@ -1,51 +1,31 @@
+// ProtectedRoute.jsx
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
-import dayjs from 'dayjs'
-import utc from 'dayjs/plugin/utc'
-import { ensureTeacherProfile } from './utils/ensureTeacherProfile'
-dayjs.extend(utc)
+import CircularProgress from '@mui/material/CircularProgress'
+import Box from '@mui/material/Box'
 
 export default function ProtectedRoute({ children }) {
-    const [loading, setLoading] = useState(true)
-    const navigate = useNavigate()
+    const [sessionChecked, setSessionChecked] = useState(false)
+    const [authed, setAuthed] = useState(false)
 
     useEffect(() => {
-        async function validateSessionAndSubscription() {
-            // ✅ Restore session first
-            const { data: sessionData } = await supabase.auth.getSession()
-            const session = sessionData?.session
-
-            if (!session) {
-                navigate('/teacher-login')
-                return
-            }
-
-            // ✅ Get teacher profile
-            const teacher = await ensureTeacherProfile()
-            if (!teacher) {
-                navigate('/teacher-login')
-                return
-            }
-
-            // ✅ Check subscription expiration
-            const expires = teacher.subscription_expires
-                ? dayjs.utc(teacher.subscription_expires)
-                : null
-
-            if (!expires || expires.isBefore(dayjs.utc())) {
-                navigate('/renew-subscription')
-                return
-            }
-
-            // ✅ All good
-            setLoading(false)
+        const checkUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            setAuthed(!!user)
+            setSessionChecked(true)
         }
 
-        validateSessionAndSubscription()
+        checkUser()
     }, [])
 
-    if (loading) return <div>در حال بررسی اشتراک و ورود...</div>
+    if (!sessionChecked) {
+        return (
+            <Box sx={{ mt: 10, textAlign: 'center' }}>
+                <CircularProgress />
+            </Box>
+        )
+    }
 
-    return <>{children}</>
+    return authed ? children : <Navigate to="/teacher-auth" replace />
 }

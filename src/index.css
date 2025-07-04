@@ -2,25 +2,24 @@
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
+  color-scheme: dark;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  color: #fff;
-  background-color: #000;
+  color: #ffffff;
+  background-color: #0d0d1a;
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: #ff66cc;
   text-decoration: inherit;
 }
 
 a:hover {
-  color: #535bf2;
+  color: #ff99cc;
 }
 
 button {
@@ -30,13 +29,13 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #1a1a2e;
   cursor: pointer;
   transition: border-color 0.25s;
 }
 
 button:hover {
-  border-color: #646cff;
+  border-color: #ff66cc;
 }
 
 button:focus,
@@ -44,7 +43,7 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
-/* 🌌 Recreated glowing background + centered layout */
+/* 🎨 Full-screen radiant galaxy-inspired gradient */
 html,
 body,
 #root {
@@ -55,17 +54,17 @@ body,
   overflow-x: hidden;
   font-family: "Vazirmatn", sans-serif;
 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-
   background:
-    radial-gradient(at 20% 30%, rgba(255, 213, 170, 0.3) 0%, transparent 60%),
-    radial-gradient(at 80% 40%, rgba(173, 216, 230, 0.25) 0%, transparent 60%),
-    radial-gradient(at 50% 85%, rgba(171, 242, 181, 0.25) 0%, transparent 60%),
-    linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+    radial-gradient(at 15% 25%, rgba(255, 102, 204, 0.25) 0%, transparent 60%),
+    radial-gradient(at 80% 10%, rgba(102, 153, 255, 0.2) 0%, transparent 55%),
+    radial-gradient(at 60% 85%, rgba(204, 102, 255, 0.25) 0%, transparent 60%),
+    linear-gradient(to bottom right, #0d0d1a, #1a1a2e, #301934);
+
   background-repeat: no-repeat;
   background-attachment: fixed;
   background-size: cover;
+}
+
+body {
+  display: block;
 }

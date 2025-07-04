@@ -77,17 +77,21 @@ export default function TeacherAuth() {
                 height: '100vh',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                background: 'none', // Gradient handled globally
+                color: '#fff'
             }}
         >
             <Paper
                 dir="rtl"
+                elevation={0}
                 sx={{
                     width: 400,
                     p: 4,
                     borderRadius: 4,
-                    bgcolor: 'white',
-                    boxShadow: 6
+                    bgcolor: 'rgba(255,255,255,0.15)',
+                    backdropFilter: 'blur(8px)',
+                    color: '#fff'
                 }}
             >
                 <Typography variant="h5" fontWeight="bold" gutterBottom>
@@ -100,10 +104,11 @@ export default function TeacherAuth() {
                         label="ایمیل"
                         margin="normal"
                         type="email"
-                        autoComplete="username" // ✅ Added
+                        autoComplete="username"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        sx={{ input: { color: '#fff' }, label: { color: '#ccc' } }}
                     />
 
                     <TextField
@@ -111,10 +116,11 @@ export default function TeacherAuth() {
                         label="رمز عبور"
                         type="password"
                         margin="normal"
-                        autoComplete="current-password" // ✅ Added
+                        autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        sx={{ input: { color: '#fff' }, label: { color: '#ccc' } }}
                     />
 
                     {errorMsg && (
@@ -126,25 +132,30 @@ export default function TeacherAuth() {
                     <Button
                         type="submit"
                         variant="contained"
-                        color="primary"
                         fullWidth
                         disabled={isLoading}
-                        sx={{ mt: 3, py: 1.5, fontWeight: 'bold' }}
+                        sx={{
+                            mt: 3,
+                            py: 1.5,
+                            fontWeight: 'bold',
+                            background: 'linear-gradient(to right, #6366f1, #4f46e5)',
+                            color: '#fff',
+                            '&:hover': {
+                                transform: 'scale(1.03)',
+                                background: 'linear-gradient(to right, #4f46e5, #4338ca)'
+                            }
+                        }}
                     >
-                        {isLoading ? (
-                            <CircularProgress size={24} color="inherit" />
-                        ) : (
-                            'ورود'
-                        )}
+                        {isLoading ? <CircularProgress size={24} color="inherit" /> : 'ورود'}
                     </Button>
                 </form>
 
-                <Typography variant="body2" sx={{ mt: 3, textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: '#ccc' }}>
                     هنوز حساب ندارید؟{' '}
                     <span
                         onClick={() => navigate('/teacher-signup')}
                         style={{
-                            color: '#1976d2',
+                            color: '#fff',
                             cursor: 'pointer',
                             fontWeight: 'bold'
                         }}

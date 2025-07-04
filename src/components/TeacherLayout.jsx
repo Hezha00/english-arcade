@@ -1,103 +1,132 @@
-import React, { useState } from 'react'
+import React from 'react'
 import {
     Box,
     Drawer,
-    AppBar,
-    Toolbar,
-    Typography,
     List,
     ListItem,
     ListItemText,
+    Typography,
     CssBaseline,
-    Divider,
-    IconButton,
-    Tooltip
+    Button
 } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '../supabaseClient'
-import MenuIcon from '@mui/icons-material/Menu'
-import ChevronRightIcon from '@mui/icons-material/ChevronRight'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 const drawerWidth = 240
 
 export default function TeacherLayout({ children }) {
     const navigate = useNavigate()
-    const [drawerOpen, setDrawerOpen] = useState(true)
+    const location = useLocation()
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut()
+    const navItems = [
+        { label: '🏠 داشبورد', path: '/teacher-dashboard' },
+        { label: '📚 کلاس‌ها', path: '/classrooms' },
+        { label: '🎮 فروشگاه بازی‌ها', path: '/game-repository' },
+        { label: '🗂️ بازی‌های من', path: '/teacher-games' },
+        { label: '📈 تحلیل‌ها', path: '/teacher-analytics' },
+        { label: '⚙️ تنظیمات', path: '/account-settings' }
+    ]
+
+    const handleLogout = () => {
+        localStorage.removeItem('teacher')
         navigate('/teacher-login')
     }
 
-    const menuItems = [
-        { label: '🏠 داشبورد', path: '/dashboard' },
-        { label: '🏫 کلاس‌ها', path: '/classrooms' },
-        { label: '🎮 بازی‌ها', path: '/teacher-games' },
-        { label: '📘 تکالیف', path: '/teacher-assignments-list' },
-        { label: '⚙️ تنظیمات حساب', path: '/account-settings' },
-        { label: '🚪 خروج', action: handleLogout }
-    ]
-
     return (
-        <Box sx={{ display: 'flex', direction: 'rtl' }}>
+        <Box
+            sx={{
+                display: 'flex',
+                minHeight: '100vh',
+                width: '100vw',
+                background: 'none', // Let index.css handle it
+                color: '#fff',
+                position: 'relative'
+            }}
+            dir="rtl"
+        >
             <CssBaseline />
 
-            <AppBar position="fixed" sx={{ zIndex: 1201 }}>
-                <Toolbar sx={{ justifyContent: 'space-between' }}>
-                    <Typography variant="h6" noWrap>
-                        🎯 داشبورد معلم
-                    </Typography>
-
-                    <Tooltip title={drawerOpen ? 'بستن منو' : 'نمایش منو'}>
-                        <IconButton
-                            color="inherit"
-                            edge="end"
-                            onClick={() => setDrawerOpen(!drawerOpen)}
-                        >
-                            {drawerOpen ? <ChevronRightIcon /> : <MenuIcon />}
-                        </IconButton>
-                    </Tooltip>
-                </Toolbar>
-            </AppBar>
-
+            {/* 🧭 Sidebar */}
             <Drawer
-                variant="persistent"
+                variant="permanent"
                 anchor="right"
-                open={drawerOpen}
                 sx={{
                     width: drawerWidth,
                     flexShrink: 0,
                     [`& .MuiDrawer-paper`]: {
                         width: drawerWidth,
                         boxSizing: 'border-box',
-                        transition: '0.3s ease-in-out'
+                        backgroundColor: 'rgba(0,0,0,0.6)',
+                        backdropFilter: 'blur(8px)',
+                        color: '#fff',
+                        px: 2,
+                        py: 4,
+                        borderLeft: '1px solid #444',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between'
                     }
                 }}
             >
-                <Toolbar />
-                <Box sx={{ overflow: 'auto' }}>
+                {/* Top section */}
+                <Box>
+                    <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+                        👨‍🏫 پنل معلم
+                    </Typography>
                     <List>
-                        {menuItems.map((item, index) => (
+                        {navItems.map((item, i) => (
                             <ListItem
-                                key={index}
-                                button // ✅ shorthand for button={true}, safely supported by MUI
-                                onClick={() =>
-                                    item.action ? item.action() : navigate(item.path)
-                                }
+                                key={i}
+                                button
+                                onClick={() => navigate(item.path)}
+                                sx={{
+                                    mb: 1,
+                                    borderRadius: 2,
+                                    backgroundColor:
+                                        location.pathname === item.path ? '#6366f1' : 'transparent',
+                                    color: location.pathname === item.path ? '#fff' : '#ddd',
+                                    '&:hover': {
+                                        backgroundColor: '#4f46e5',
+                                        color: '#fff'
+                                    }
+                                }}
                             >
-                                <ListItemText
-                                    primary={item.label}
-                                    sx={{ textAlign: 'right' }}
-                                />
+                                <ListItemText primary={item.label} />
                             </ListItem>
                         ))}
                     </List>
                 </Box>
-                <Divider />
+
+                {/* Bottom section */}
+                <Box>
+                    <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={handleLogout}
+                        sx={{
+                            borderColor: '#f87171',
+                            color: '#f87171',
+                            fontWeight: 600,
+                            '&:hover': {
+                                backgroundColor: '#f87171',
+                                color: '#fff',
+                                borderColor: '#f87171'
+                            }
+                        }}
+                    >
+                        خروج
+                    </Button>
+                </Box>
             </Drawer>
 
-            <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
-                <Toolbar />
+            {/* 📦 Main Content */}
+            <Box
+                sx={{
+                    flexGrow: 1,
+                    px: 3,
+                    py: 4,
+                    backdropFilter: 'blur(2px)'
+                }}
+            >
                 {children}
             </Box>
         </Box>

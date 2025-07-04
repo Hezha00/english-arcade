@@ -1,86 +1,63 @@
+// TopScorers.jsx
 import React, { useEffect, useState } from 'react'
 import {
-    Typography, Container, FormControl, InputLabel, Select, MenuItem, List, ListItemText, ListItem, Divider
+    Box, Typography, Paper, List, ListItem, ListItemText,
+    Chip, Divider, CircularProgress
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
 import TeacherLayout from '../components/TeacherLayout'
+import moment from 'moment-jalaali'
 
 export default function TopScorers() {
-    const [classrooms, setClassrooms] = useState([])
-    const [selected, setSelected] = useState('')
-    const [leaders, setLeaders] = useState([])
+    const [scores, setScores] = useState([])
+    const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        fetchClassrooms()
+        const fetchTopScores = async () => {
+            const { data, error } = await supabase
+                .from('student_game_status')
+                .select('score, completed_at, student_id, students(name)')
+                .order('score', { ascending: false })
+                .limit(20)
+
+            if (error) console.error(error)
+            setScores(data || [])
+            setLoading(false)
+        }
+
+        fetchTopScores()
     }, [])
 
-    const fetchClassrooms = async () => {
-        const { data: user } = await supabase.auth.getUser()
-        const teacherId = user.user.id
-
-        const { data } = await supabase
-            .from('classrooms')
-            .select('name')
-            .eq('teacher_id', teacherId)
-
-        setClassrooms(data || [])
-    }
-
-    useEffect(() => {
-        if (selected) fetchLeaders()
-    }, [selected])
-
-    const fetchLeaders = async () => {
-        const weekAgo = new Date()
-        weekAgo.setDate(weekAgo.getDate() - 7)
-
-        const { data } = await supabase
-            .from('results')
-            .select('*')
-            .eq('classroom', selected)
-            .gte('submitted_at', weekAgo.toISOString())
-
-        const grouped = {}
-        data.forEach(r => {
-            if (!grouped[r.username]) grouped[r.username] = 0
-            grouped[r.username] += r.score
-        })
-
-        const top = Object.entries(grouped)
-            .map(([username, score]) => ({ username, score }))
-            .sort((a, b) => b.score - a.score)
-
-        setLeaders(top)
-    }
+    if (loading) return <CircularProgress sx={{ mt: 10 }} />
 
     return (
         <TeacherLayout>
-            <Container dir="rtl" sx={{ mt: 4 }}>
-                <Typography variant="h6" gutterBottom>دانش‌آموزان برتر این هفته</Typography>
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                    <InputLabel>کلاس</InputLabel>
-                    <Select value={selected} onChange={(e) => setSelected(e.target.value)}>
-                        {classrooms.map(cls => (
-                            <MenuItem key={cls.name} value={cls.name}>{cls.name}</MenuItem>
-                        ))}
-                    </Select>
-                </FormControl>
+            <Box dir="rtl" sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                    🏆 برترین نمرات
+                </Typography>
 
-                <List>
-                    {leaders.map((s, i) => (
-                        <React.Fragment key={i}>
-                            <ListItem>
-                                <ListItemText
-                                    primary={`${i + 1}. ${s.username}`}
-                                    secondary={`امتیاز هفتگی: ${s.score}`}
-                                    sx={{ textAlign: 'right' }}
-                                />
-                            </ListItem>
-                            <Divider />
-                        </React.Fragment>
-                    ))}
-                </List>
-            </Container>
+                <Paper sx={{ p: 3, borderRadius: 3 }}>
+                    {scores.length === 0 ? (
+                        <Typography color="text.secondary">📭 هنوز نمره‌ای ثبت نشده</Typography>
+                    ) : (
+                        <List>
+                            {scores.map((s, i) => (
+                                <React.Fragment key={i}>
+                                    <ListItem>
+                                        <ListItemText
+                                            primary={s.students?.name || s.student_id}
+                                            secondary={`📅 ${moment(s.completed_at).format('jYYYY/jMM/jDD')}`}
+                                        />
+                                        <Chip label={`${s.score}%`} color={s.score >= 80 ? 'success' : s.score >= 50 ? 'warning' : 'error'} />
+                                    </ListItem>
+                                    {i < scores.length - 1 && <Divider sx={{ my: 1 }} />}
+                                </React.Fragment>
+                            ))}
+                        </List>
+                    )}
+                </Paper>
+            </Box>
         </TeacherLayout>
     )
 }

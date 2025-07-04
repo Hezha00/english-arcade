@@ -4,7 +4,6 @@ import {
     Select, MenuItem, Box, Paper, Radio, RadioGroup, FormControlLabel, Alert
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
-import TeacherLayout from '../components/TeacherLayout'
 
 export default function AddQuestions() {
     const [assignments, setAssignments] = useState([])
@@ -55,15 +54,13 @@ export default function AddQuestions() {
             return
         }
 
-        const { error } = await supabase.from('questions').insert([
-            {
-                assignment_id: selectedId,
-                question_text: questionText.trim(),
-                options: trimmedOptions,
-                correct_index: parseInt(correctIndex),
-                audio_url: audioUrl.trim() || null
-            }
-        ])
+        const { error } = await supabase.from('questions').insert([{
+            assignment_id: selectedId,
+            question_text: questionText.trim(),
+            options: trimmedOptions,
+            correct_index: parseInt(correctIndex),
+            audio_url: audioUrl.trim() || null
+        }])
 
         if (error) {
             console.error('❌ Insert error:', error)
@@ -72,7 +69,6 @@ export default function AddQuestions() {
             return
         }
 
-        // Clear fields
         setQuestionText('')
         setOptions(['', '', '', ''])
         setCorrectIndex('')
@@ -82,98 +78,104 @@ export default function AddQuestions() {
     }
 
     return (
-        <TeacherLayout>
-            <Container dir="rtl" maxWidth="sm" sx={{ mt: 4 }}>
-                <Paper sx={{ p: 4 }}>
-                    <Typography variant="h6" gutterBottom>
-                        {lockedAssignment
-                            ? 'افزودن سؤال به تمرین انتخاب‌شده'
-                            : 'افزودن سؤال به تمرین'}
-                    </Typography>
+        <Container dir="rtl" maxWidth="sm" sx={{ mt: 4 }}>
+            <Paper
+                sx={{
+                    p: 4,
+                    bgcolor: 'rgba(255,255,255,0.15)',
+                    backdropFilter: 'blur(8px)',
+                    borderRadius: 4,
+                    color: '#fff'
+                }}
+            >
+                <Typography variant="h6" gutterBottom>
+                    {lockedAssignment
+                        ? 'افزودن سؤال به تمرین انتخاب‌شده'
+                        : 'افزودن سؤال به تمرین'}
+                </Typography>
 
-                    {!lockedAssignment && (
-                        <FormControl fullWidth sx={{ my: 2 }}>
-                            <InputLabel>انتخاب تمرین</InputLabel>
-                            <Select
-                                value={selectedId}
-                                onChange={(e) => setSelectedId(e.target.value)}
-                            >
-                                {assignments.map((a) => (
-                                    <MenuItem key={a.id} value={a.id}>{a.title}</MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    )}
-
-                    {lockedAssignment && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            تمرین انتخاب‌شده: {assignments.find(a => a.id === selectedId)?.title || '...'}
-                        </Typography>
-                    )}
-
-                    <TextField
-                        label="متن سؤال"
-                        fullWidth
-                        multiline
-                        rows={2}
-                        value={questionText}
-                        onChange={(e) => setQuestionText(e.target.value)}
-                    />
-
-                    {options.map((opt, i) => (
-                        <TextField
-                            key={i}
-                            label={`گزینه ${i + 1}`}
-                            fullWidth
-                            margin="normal"
-                            value={opt}
-                            onChange={(e) => {
-                                const updated = [...options]
-                                updated[i] = e.target.value
-                                setOptions(updated)
-                            }}
-                        />
-                    ))}
-
-                    <TextField
-                        label="لینک صوتی (اختیاری)"
-                        fullWidth
-                        sx={{ mt: 2 }}
-                        value={audioUrl}
-                        onChange={(e) => setAudioUrl(e.target.value)}
-                    />
-
-                    <FormControl component="fieldset" sx={{ mt: 2 }}>
-                        <Typography>گزینه صحیح:</Typography>
-                        <RadioGroup
-                            row
-                            value={correctIndex}
-                            onChange={(e) => setCorrectIndex(e.target.value)}
+                {!lockedAssignment && (
+                    <FormControl fullWidth sx={{ my: 2 }}>
+                        <InputLabel>انتخاب تمرین</InputLabel>
+                        <Select
+                            value={selectedId}
+                            onChange={(e) => setSelectedId(e.target.value)}
                         >
-                            {options.map((_, i) => (
-                                <FormControlLabel
-                                    key={i}
-                                    value={i.toString()}
-                                    control={<Radio />}
-                                    label={i + 1}
-                                />
+                            {assignments.map((a) => (
+                                <MenuItem key={a.id} value={a.id}>{a.title}</MenuItem>
                             ))}
-                        </RadioGroup>
+                        </Select>
                     </FormControl>
+                )}
 
-                    {message && (
-                        <Alert severity={error ? 'error' : 'success'} sx={{ mt: 2 }}>
-                            {message}
-                        </Alert>
-                    )}
+                {lockedAssignment && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        تمرین انتخاب‌شده: {assignments.find(a => a.id === selectedId)?.title || '...'}
+                    </Typography>
+                )}
 
-                    <Box sx={{ mt: 3 }}>
-                        <Button variant="contained" fullWidth onClick={handleSubmit}>
-                            افزودن سؤال
-                        </Button>
-                    </Box>
-                </Paper>
-            </Container>
-        </TeacherLayout>
+                <TextField
+                    label="متن سؤال"
+                    fullWidth
+                    multiline
+                    rows={2}
+                    value={questionText}
+                    onChange={(e) => setQuestionText(e.target.value)}
+                />
+
+                {options.map((opt, i) => (
+                    <TextField
+                        key={i}
+                        label={`گزینه ${i + 1}`}
+                        fullWidth
+                        margin="normal"
+                        value={opt}
+                        onChange={(e) => {
+                            const updated = [...options]
+                            updated[i] = e.target.value
+                            setOptions(updated)
+                        }}
+                    />
+                ))}
+
+                <TextField
+                    label="لینک صوتی (اختیاری)"
+                    fullWidth
+                    sx={{ mt: 2 }}
+                    value={audioUrl}
+                    onChange={(e) => setAudioUrl(e.target.value)}
+                />
+
+                <FormControl component="fieldset" sx={{ mt: 2 }}>
+                    <Typography>گزینه صحیح:</Typography>
+                    <RadioGroup
+                        row
+                        value={correctIndex}
+                        onChange={(e) => setCorrectIndex(e.target.value)}
+                    >
+                        {options.map((_, i) => (
+                            <FormControlLabel
+                                key={i}
+                                value={i.toString()}
+                                control={<Radio />}
+                                label={i + 1}
+                            />
+                        ))}
+                    </RadioGroup>
+                </FormControl>
+
+                {message && (
+                    <Alert severity={error ? 'error' : 'success'} sx={{ mt: 2 }}>
+                        {message}
+                    </Alert>
+                )}
+
+                <Box sx={{ mt: 3 }}>
+                    <Button variant="contained" fullWidth onClick={handleSubmit}>
+                        افزودن سؤال
+                    </Button>
+                </Box>
+            </Paper>
+        </Container>
     )
 }

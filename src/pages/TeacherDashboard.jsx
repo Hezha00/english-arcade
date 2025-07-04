@@ -1,120 +1,114 @@
 import React, { useEffect, useState } from 'react'
 import {
-    Box, Container, Typography, Paper, TableContainer, Table,
-    TableHead, TableBody, TableRow, TableCell, Chip
+    Container, Typography, Paper, Grid,
+    Button, CircularProgress, Box
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
-import TeacherAppWrapper from '../TeacherAppWrapper'
-import moment from 'moment-jalaali'
+import { useNavigate } from 'react-router-dom'
 
 export default function TeacherDashboard() {
-    const [summary, setSummary] = useState([])
+    const [teacher, setTeacher] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const navigate = useNavigate()
 
     useEffect(() => {
-        const fetchData = async () => {
+        const fetchTeacher = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user?.id) return setLoading(false)
+
             const { data, error } = await supabase
-                .from('results')
-                .select('assignment_id, finished, score, created_at, students(username), assignments(title)')
-                .order('created_at', { ascending: false })
+                .from('teachers')
+                .select('*')
+                .eq('id', user.id)
+                .single()
 
-            if (error || !data) return
+            if (error && error.code === 'PGRST116') {
+                await supabase.from('teachers').insert({ id: user.id, email: user.email })
+                setTeacher({ id: user.id, email: user.email })
+            } else {
+                setTeacher(data)
+            }
 
-            const grouped = {}
-
-            data.forEach((r) => {
-                const key = r.assignment_id
-                if (!grouped[key]) {
-                    grouped[key] = {
-                        assignment_id: r.assignment_id,
-                        title: r.assignments?.title || '---',
-                        totalAttempts: 0,
-                        finishedCount: 0,
-                        scores: [],
-                        lastUpdated: r.created_at
-                    }
-                }
-
-                grouped[key].totalAttempts += 1
-                if (r.finished) grouped[key].finishedCount += 1
-                if (typeof r.score === 'number') grouped[key].scores.push(r.score)
-
-                if (r.created_at > grouped[key].lastUpdated) {
-                    grouped[key].lastUpdated = r.created_at
-                }
-            })
-
-            const summaryArray = Object.values(grouped).map((item) => ({
-                ...item,
-                avgScore:
-                    item.scores.length > 0
-                        ? Math.round(item.scores.reduce((a, b) => a + b, 0) / item.scores.length)
-                        : '—'
-            }))
-
-            setSummary(summaryArray)
+            setLoading(false)
         }
 
-        fetchData()
+        fetchTeacher()
     }, [])
 
-    return (
-        <TeacherAppWrapper>
-            <Box sx={{ minHeight: '100vh', backgroundColor: '#f4f6f8', py: 8 }}>
-                <Container maxWidth="lg" dir="rtl">
-                    <Typography variant="h4" fontWeight="bold" gutterBottom>
-                        📊 داشبورد کلاس
-                    </Typography>
+    if (loading) return <CircularProgress sx={{ mt: 10 }} />
 
-                    <Paper elevation={3} sx={{ p: 3, mt: 4 }}>
-                        {summary.length === 0 ? (
-                            <Typography>هیچ داده‌ای برای نمایش وجود ندارد.</Typography>
-                        ) : (
-                            <TableContainer>
-                                <Table>
-                                    <TableHead>
-                                        <TableRow>
-                                            <TableCell>تمرین</TableCell>
-                                            <TableCell align="center">تعداد دانش‌آموز</TableCell>
-                                            <TableCell align="center">تعداد ارسال شده</TableCell>
-                                            <TableCell align="center">میانگین نمره</TableCell>
-                                            <TableCell align="center">آخرین فعالیت</TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {summary.map((row) => (
-                                            <TableRow key={row.assignment_id}>
-                                                <TableCell>{row.title}</TableCell>
-                                                <TableCell align="center">
-                                                    <Chip
-                                                        label={row.totalAttempts}
-                                                        color="primary"
-                                                        variant="outlined"
-                                                        size="small"
-                                                    />
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    <Chip
-                                                        label={row.finishedCount}
-                                                        color="success"
-                                                        variant="outlined"
-                                                        size="small"
-                                                    />
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    {typeof row.avgScore === 'number' ? `${row.avgScore}%` : '—'}
-                                                </TableCell>
-                                                <TableCell align="center">
-                                                    {moment(row.lastUpdated).format('jYYYY/jMM/jDD')}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                        )}
-                    </Paper>
-                </Container>
+    return (
+        <Container dir="rtl" sx={{ py: 4, mt: { xs: 8, md: 4 } }}>
+            <Box
+                dir="rtl"
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    transform: 'translateX(250px)',
+                    mt: -5
+                }}
+            >
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                    <Typography variant="h4" fontWeight="bold" color="#fff">
+                        خوش آمدید، {teacher?.email}
+                    </Typography>
+                </Box>
+
+                <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                        <Paper
+                            sx={{
+                                p: 3,
+                                borderRadius: 4,
+                                bgcolor: 'rgba(255,255,255,0.15)',
+                                backdropFilter: 'blur(8px)',
+                                color: '#fff'
+                            }}
+                        >
+                            <Typography variant="h6" fontWeight="bold">
+                                🎮 ساخت بازی جدید
+                            </Typography>
+                            <Typography variant="body2" sx={{ mt: 1 }}>
+                                بازی‌های آموزشی بسازید و به کلاس‌ها اختصاص دهید.
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                sx={{ mt: 2 }}
+                                onClick={() => navigate('/create-game')}
+                            >
+                                ساخت بازی
+                            </Button>
+                        </Paper>
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                        <Paper
+                            sx={{
+                                p: 3,
+                                borderRadius: 4,
+                                bgcolor: 'rgba(255,255,255,0.15)',
+                                backdropFilter: 'blur(8px)',
+                                color: '#fff'
+                            }}
+                        >
+                            <Typography variant="h6" fontWeight="bold">
+                                📊 مشاهده نتایج
+                            </Typography>
+                            <Typography variant="body2" sx={{ mt: 1 }}>
+                                عملکرد دانش‌آموزان را بررسی کنید.
+                            </Typography>
+                            <Button
+                                variant="outlined"
+                                sx={{ mt: 2 }}
+                                onClick={() => navigate('/teacher-analytics')}
+                            >
+                                تحلیل نتایج
+                            </Button>
+                        </Paper>
+                    </Grid>
+                </Grid>
             </Box>
-        </TeacherAppWrapper>
+        </Container>
     )
 }

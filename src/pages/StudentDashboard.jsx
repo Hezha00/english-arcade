@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import {
-    Typography, Container, Box, Paper
+    Typography, Container, Paper, Box, Grid, Button
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import StudentAppWrapper from '../layouts/StudentAppWrapper'
 
 export default function StudentDashboard() {
     const [student, setStudent] = useState(null)
@@ -21,33 +20,88 @@ export default function StudentDashboard() {
     if (!student) return null
 
     return (
-        <StudentAppWrapper student={student}>
-            <Container dir="rtl" sx={{ mt: 4 }}>
-                <Typography variant="h5" gutterBottom>
-                    👋 سلام، {student.name || student.username} عزیز!
-                </Typography>
+        <Container
+            dir="rtl"
+            sx={{
+                mt: 4,
+                backdropFilter: 'blur(6px)',
+                color: '#fff'
+            }}
+        >
+            <Typography variant="h5" gutterBottom>
+                👋 سلام، {student.name || student.username} عزیز!
+            </Typography>
 
-                <Typography>🎓 مدرسه: {student.school}</Typography>
-                <Typography>📚 پایه: {student.year_level || 'ثبت نشده'}</Typography>
-                <Typography>🏫 کلاس: {student.classroom}</Typography>
+            <Typography>🎓 مدرسه: {student.school}</Typography>
+            <Typography>📚 پایه: {student.year_level || 'ثبت نشده'}</Typography>
+            <Typography>🏫 کلاس: {student.classroom}</Typography>
 
-                <Box
-                    sx={{
-                        mt: 2,
-                        width: 100,
-                        height: 100,
-                        backgroundColor: student.profile_color || '#ccc',
-                        borderRadius: '50%'
-                    }}
-                />
+            <Grid container spacing={3} sx={{ mt: 3 }}>
+                <Grid item xs={12} md={6}>
+                    <Paper
+                        sx={{
+                            p: 3,
+                            borderRadius: 3,
+                            bgcolor: 'rgba(255,255,255,0.12)',
+                            backdropFilter: 'blur(6px)',
+                            color: '#fff'
+                        }}
+                    >
+                        <Typography variant="subtitle1" fontWeight="bold">
+                            🎯 امتیاز کل شما
+                        </Typography>
+                        <Typography variant="h6" sx={{ mt: 1 }}>
+                            {student.total_score ?? 0} امتیاز
+                        </Typography>
+                    </Paper>
+                </Grid>
 
-                <Paper elevation={3} sx={{ mt: 3, p: 2 }}>
-                    <Typography variant="h6">🏅 نشان شما: {student.badge || '❓'}</Typography>
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                        🎯 مجموع امتیاز شما: {student.total_score ?? 0}
-                    </Typography>
-                </Paper>
-            </Container>
-        </StudentAppWrapper>
+                <Grid item xs={12} md={6}>
+                    <Paper
+                        sx={{
+                            p: 3,
+                            borderRadius: 3,
+                            bgcolor: 'rgba(255,255,255,0.12)',
+                            backdropFilter: 'blur(6px)',
+                            color: '#fff'
+                        }}
+                    >
+                        <Typography variant="subtitle1" fontWeight="bold">
+                            📊 آزمون‌ها و نتایج
+                        </Typography>
+                        <Button
+                            variant="outlined"
+                            sx={{ mt: 1, color: '#fff', borderColor: '#fff' }}
+                            onClick={() => navigate('/student-results')}
+                        >
+                            مشاهده نتایج من
+                        </Button>
+                    </Paper>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                    <Paper
+                        sx={{
+                            p: 3,
+                            borderRadius: 3,
+                            bgcolor: 'rgba(255,255,255,0.12)',
+                            backdropFilter: 'blur(6px)',
+                            color: '#fff'
+                        }}
+                    >
+                        <Typography variant="subtitle1" fontWeight="bold">
+                            🎮 بازی‌های آموزشی
+                        </Typography>
+                        <Button
+                            variant="outlined"
+                            sx={{ mt: 1, color: '#fff', borderColor: '#fff' }}
+                            onClick={() => navigate('/student-games')}
+                        >
+                            شروع بازی
+                        </Button>
+                    </Paper>
+                </Grid>
+            </Grid>
+        </Container>
     )
 }
