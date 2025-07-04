@@ -53,7 +53,7 @@ export default function ClassroomDetails() {
 
             const { data: game } = await supabase
                 .from('games')
-                .select('id, title, created_at')
+                .select('id, name, created_at')
                 .eq('teacher_id', uid)
                 .order('created_at', { ascending: false })
                 .limit(1)
