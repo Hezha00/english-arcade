@@ -1,12 +1,15 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
-    Box, Typography, List, ListItem, ListItemText, Divider, Button
+    Box, Typography, List, ListItem, ListItemText, Divider, Button, IconButton
 } from '@mui/material'
+import MenuIcon from '@mui/icons-material/Menu'
+import MenuOpenIcon from '@mui/icons-material/MenuOpen'
 import { useNavigate, useLocation } from 'react-router-dom'
 
 export default function StudentAppWrapper({ student, children }) {
     const navigate = useNavigate()
     const location = useLocation()
+    const [open, setOpen] = useState(true)
 
     useEffect(() => {
         if (!student) {
@@ -19,7 +22,6 @@ export default function StudentAppWrapper({ student, children }) {
 
     const menuItems = [
         { label: '🏠 داشبورد', path: '/student-dashboard' },
-        { label: '📝 تمرین‌ها', path: '/student-assignments' },
         { label: '🎮 بازی‌ها', path: '/student-games' },
         { label: '📊 نتایج', path: '/student-results' }
     ]
@@ -36,35 +38,44 @@ export default function StudentAppWrapper({ student, children }) {
                 width: '100vw',
                 display: 'flex',
                 flexDirection: 'row',
-                background: 'none', // index.css handles full-page gradient
+                background: 'none',
                 color: '#fff',
                 position: 'relative'
             }}
             dir="rtl"
         >
-            {/* 🧭 Sidebar */}
             <Box
                 sx={{
-                    width: 220,
+                    width: open ? 220 : 64,
                     backgroundColor: 'rgba(0,0,0,0.6)',
                     backdropFilter: 'blur(8px)',
                     borderRight: '1px solid #444',
                     py: 4,
-                    px: 2,
+                    px: open ? 2 : 1,
+                    transition: 'width 0.3s ease',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between'
                 }}
             >
                 <Box>
-                    <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-                        🎓 پنل دانش‌آموز
-                    </Typography>
-                    {student?.name && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, alignItems: 'center' }}>
+                        {open && (
+                            <Typography variant="h6" fontWeight="bold">
+                                🎓 پنل دانش‌آموز
+                            </Typography>
+                        )}
+                        <IconButton onClick={() => setOpen(!open)} sx={{ color: '#fff' }}>
+                            {open ? <MenuOpenIcon /> : <MenuIcon />}
+                        </IconButton>
+                    </Box>
+
+                    {student?.name && open && (
                         <Typography variant="body2" sx={{ mb: 3 }}>
                             خوش آمدید، {student.name}
                         </Typography>
                     )}
+
                     <List>
                         {menuItems.map((item, i) => (
                             <ListItem
@@ -80,16 +91,22 @@ export default function StudentAppWrapper({ student, children }) {
                                     '&:hover': {
                                         backgroundColor: '#4f46e5',
                                         color: '#fff'
-                                    }
+                                    },
+                                    justifyContent: open ? 'flex-start' : 'center'
                                 }}
                             >
-                                <ListItemText primary={item.label} />
+                                {open ? (
+                                    <ListItemText primary={item.label} />
+                                ) : (
+                                    <Typography variant="body2">
+                                        {item.label.slice(0, 2)}
+                                    </Typography>
+                                )}
                             </ListItem>
                         ))}
                     </List>
                 </Box>
 
-                {/* 🔓 Logout Button */}
                 <Box>
                     <Divider sx={{ mb: 2, borderColor: '#555' }} />
                     <Button
@@ -104,7 +121,8 @@ export default function StudentAppWrapper({ student, children }) {
                                 backgroundColor: '#f87171',
                                 color: '#fff',
                                 borderColor: '#f87171'
-                            }
+                            },
+                            display: open ? 'inline-flex' : 'none'
                         }}
                     >
                         خروج
@@ -112,7 +130,6 @@ export default function StudentAppWrapper({ student, children }) {
                 </Box>
             </Box>
 
-            {/* 📦 Main Content */}
             <Box
                 sx={{
                     flexGrow: 1,
