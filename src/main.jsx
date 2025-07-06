@@ -21,9 +21,12 @@ import StudentAssignments from './pages/StudentAssignments'
 import StudentQuiz from './pages/StudentQuiz'
 import StudentResultsHistory from './pages/StudentResultsHistory'
 import StudentGames from './pages/StudentGames'
+import MemoryPuzzleGame from './pages/MemoryPuzzleGame'
+import SentenceStructureGame from './pages/SentenceStructureGame'
 
 // Teacher pages
 import TeacherAuth from './pages/TeacherAuth'
+import PricingPage from './pages/PricingPage'
 import CreateAssignment from './pages/CreateAssignment'
 import AddQuestions from './pages/AddQuestions'
 import TeacherAssignmentsDashboard from './pages/TeacherAssignmentsDashboard'
@@ -35,7 +38,6 @@ import TeacherSubscription from './pages/TeacherSubscription'
 import AdminCreateLicense from './pages/AdminCreateLicense'
 import AdminLicenseList from './pages/AdminLicenseList'
 import AdminDashboard from './pages/AdminDashboard'
-import TeacherSignup from './pages/TeacherSignup'
 import Dashboard from './pages/Dashboard'
 import Classrooms from './pages/Classrooms'
 import ClassroomDetails from './pages/ClassroomDetails'
@@ -48,6 +50,10 @@ import NewAssignmentForm from './pages/NewAssignmentForm'
 import TeacherDashboard from './pages/TeacherDashboard'
 import CreateGame from './pages/CreateGame'
 import GameStore from './pages/GameStore'
+import GameDetails from './pages/GameDetails'
+import CreateWordMatchingGame from './pages/CreateWordMatchingGame'
+import CreateMemoryPuzzleGame from './pages/CreateMemoryPuzzleGame'
+import CreateSentenceStructureGame from './pages/CreateSentenceStructureGame'
 
 import './index.css'
 
@@ -79,7 +85,7 @@ root.render(
         }
       />
       <Route
-        path="/student-quiz/:assignmentId"
+        path="/student-quiz/:gameId"
         element={
           <StudentAppWrapper student={student}>
             <StudentQuiz />
@@ -102,10 +108,18 @@ root.render(
           </StudentAppWrapper>
         }
       />
+      <Route
+        path="/memory-puzzle/:gameId"
+        element={<MemoryPuzzleGame />}
+      />
+      <Route
+        path="/sentence-structure/:gameId"
+        element={<SentenceStructureGame />}
+      />
 
       {/* 🧑‍🏫 Teacher Public Auth */}
       <Route path="/teacher-login" element={<TeacherAuth />} />
-      <Route path="/teacher-signup" element={<TeacherSignup />} />
+      <Route path="/pricing" element={<PricingPage />} />
       <Route path="/teacher-subscription" element={<TeacherSubscription />} />
       <Route path="/renew-subscription" element={<TeacherSubscription />} />
 
@@ -333,6 +347,54 @@ root.render(
             <ProtectedRoute>
               <TeacherLayout>
                 <TeacherDashboard />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/teacher-game/:gameId/details"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <GameDetails />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/create-word-matching"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <CreateWordMatchingGame />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/create-memory-puzzle"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <CreateMemoryPuzzleGame />
+              </TeacherLayout>
+            </ProtectedRoute>
+          </SessionGuard>
+        }
+      />
+      <Route
+        path="/create-sentence-structure"
+        element={
+          <SessionGuard>
+            <ProtectedRoute>
+              <TeacherLayout>
+                <CreateSentenceStructureGame />
               </TeacherLayout>
             </ProtectedRoute>
           </SessionGuard>

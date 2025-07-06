@@ -21,13 +21,13 @@ export default function CreateAssignment() {
     }, [])
 
     const fetchClassrooms = async () => {
-        const { data: user } = await supabase.auth.getUser()
-        const teacherId = user?.user?.id
+        const { data: auth } = await supabase.auth.getUser()
+        const teacherAuthId = auth?.user?.id
 
-        const { data, error } = await supabase
+        const { data } = await supabase
             .from('classrooms')
-            .select('*')
-            .eq('teacher_id', teacherId)
+            .select('name')
+            .eq('teacher_id', teacherAuthId)
 
         if (error) {
             console.error('❌ خطا در دریافت کلاس‌ها:', error)

@@ -51,7 +51,7 @@ export default function TeacherAssignments() {
                         <Typography variant="h6">کلاس: {classroom}</Typography>
                         <Grid container spacing={2} sx={{ mt: 1 }}>
                             {items.map((a) => (
-                                <Grid item xs={12} sm={6} md={4} key={a.id}>
+                                <Grid sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' } }} key={a.id}>
                                     <Card>
                                         <CardContent sx={{ textAlign: 'right' }}>
                                             <Typography fontWeight="bold">{a.title}</Typography>

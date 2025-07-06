@@ -37,6 +37,10 @@ export default function StudentResultsHistory() {
 
     if (!student) return <LinearProgress sx={{ mt: 10 }} />
 
+    // After fetching results, calculate average score
+    const allScores = results.map(r => r.score)
+    const avgScore = allScores.length ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0
+
     return (
         <Box sx={{ background: 'url(/bg.png)', minHeight: '100vh', py: 8, px: 2 }}>
             <Container dir="rtl" maxWidth="md">
@@ -60,28 +64,33 @@ export default function StudentResultsHistory() {
                             </Button>
                         </Box>
                     ) : (
-                        <List>
-                            {results.map((r, index) => {
-                                const scoreColor = r.score >= 80 ? 'success' : r.score >= 50 ? 'warning' : 'error'
-                                const date = r.completed_at
-                                    ? moment(r.completed_at).format('jYYYY/jMM/jDD')
-                                    : '---'
+                        <>
+                            <Typography variant="h6" color="#4f46e5" sx={{ mb: 2, textAlign: 'center' }}>
+                                میانگین امتیاز کل بازی‌ها: {avgScore}%
+                            </Typography>
+                            <List>
+                                {results.slice(0, 20).map((r, index) => {
+                                    const scoreColor = r.score >= 80 ? 'success' : r.score >= 50 ? 'warning' : 'error'
+                                    const date = r.completed_at
+                                        ? moment(r.completed_at).format('jYYYY/jMM/jDD')
+                                        : '---'
 
-                                return (
-                                    <React.Fragment key={index}>
-                                        <ListItem>
-                                            <SportsEsportsIcon style={{ marginLeft: 8, color: '#4f46e5' }} />
-                                            <ListItemText
-                                                primary={r.game?.name || '---'}
-                                                secondary={`📅 تاریخ: ${date}`}
-                                            />
-                                            <Chip label={`${r.score}%`} color={scoreColor} />
-                                        </ListItem>
-                                        {index < results.length - 1 && <Divider sx={{ my: 1 }} />}
-                                    </React.Fragment>
-                                )
-                            })}
-                        </List>
+                                    return (
+                                        <React.Fragment key={index}>
+                                            <ListItem>
+                                                <SportsEsportsIcon style={{ marginLeft: 8, color: '#4f46e5' }} />
+                                                <ListItemText
+                                                    primary={r.game?.name || '---'}
+                                                    secondary={`📅 تاریخ: ${date}`}
+                                                />
+                                                <Chip label={`${r.score}%`} color={scoreColor} />
+                                            </ListItem>
+                                            {index < results.length - 1 && <Divider sx={{ my: 1 }} />}
+                                        </React.Fragment>
+                                    )
+                                })}
+                            </List>
+                        </>
                     )}
                 </Paper>
             </Container>

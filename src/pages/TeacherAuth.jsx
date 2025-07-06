@@ -153,14 +153,14 @@ export default function TeacherAuth() {
                 <Typography variant="body2" sx={{ mt: 3, textAlign: 'center', color: '#ccc' }}>
                     هنوز حساب ندارید؟{' '}
                     <span
-                        onClick={() => navigate('/teacher-signup')}
+                        onClick={() => navigate('/pricing')}
                         style={{
                             color: '#fff',
                             cursor: 'pointer',
                             fontWeight: 'bold'
                         }}
                     >
-                        ثبت‌نام کنید
+                        مشاهده طرح‌ها
                     </span>
                 </Typography>
             </Paper>

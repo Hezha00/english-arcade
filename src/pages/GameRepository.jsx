@@ -12,20 +12,33 @@ export default function GameRepository() {
     const [loading, setLoading] = useState(true)
     const [teacherId, setTeacherId] = useState(null)
     const [downloadedNames, setDownloadedNames] = useState([])
+    const [error, setError] = useState('')
     const navigate = useNavigate()
 
     useEffect(() => {
-        const fetchTemplates = async () => {
+        async function loadTemplates() {
             try {
-                const res = await fetch('/games.json')
-                const json = await res.json()
-                setTemplates(json.templates || [])
+                const files = [
+                    '/games/word-matching.json',
+                    '/games/memory-puzzle.json',
+                    '/games/sentence-structure.json'
+                ]
+                const loaded = await Promise.all(files.map(async (url) => {
+                    const res = await fetch(url)
+                    if (!res.ok) throw new Error('خطا در بارگذاری قالب: ' + url)
+                    return await res.json()
+                }))
+                setTemplates(loaded)
             } catch (err) {
-                console.error('خطا در بارگذاری قالب‌ها:', err)
+                setError(err.message || 'خطا در بارگذاری قالب‌ها')
+            } finally {
+                setLoading(false)
             }
-            setLoading(false)
         }
+        loadTemplates()
+    }, [])
 
+    useEffect(() => {
         const fetchTeacherAndDownloads = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (user?.id) {
@@ -41,28 +54,44 @@ export default function GameRepository() {
             }
         }
 
-        fetchTemplates()
         fetchTeacherAndDownloads()
     }, [])
 
     const handleDownload = async (template) => {
         if (!teacherId) return alert('❌ حساب کاربری یافت نشد')
 
-        if (downloadedNames.includes(template.name)) {
-            alert(`⚠️ بازی "${template.name}" قبلاً دانلود شده است`)
+        const templateName = template.template_name
+        if (downloadedNames.includes(templateName)) {
+            alert(`⚠️ بازی "${templateName}" قبلاً دانلود شده است`)
             return
         }
 
         try {
             const message = await downloadTemplate(template, teacherId)
             alert(message)
-            setDownloadedNames([...downloadedNames, template.name])
+            setDownloadedNames([...downloadedNames, templateName])
         } catch (err) {
             alert(err.message || '❌ خطا در دانلود بازی')
         }
     }
 
+    const gameTypeRegistry = {
+      'word-matching': {
+        label: 'تطبیق کلمه',
+        createPath: '/create-word-matching',
+      },
+      'memory-puzzle': {
+        label: 'بازی حافظه',
+        createPath: '/create-memory-puzzle',
+      },
+      'sentence-structure': {
+        label: 'ساختار جمله',
+        createPath: '/create-sentence-structure',
+      },
+    }
+
     if (loading) return <CircularProgress sx={{ mt: 10 }} />
+    if (error) return <Typography color="error" sx={{ mt: 10, textAlign: 'center' }}>{error}</Typography>
 
     return (
         <Container dir="rtl" sx={{ py: 4, mt: { xs: 10, md: 1 } }}>
@@ -94,19 +123,19 @@ export default function GameRepository() {
                     ) : (
                         <List>
                             {templates.map((template, i) => {
-                                const alreadyDownloaded = downloadedNames.includes(template.name)
+                                const alreadyDownloaded = downloadedNames.includes(template.template_name)
                                 return (
                                     <React.Fragment key={i}>
                                         <ListItem>
                                             <Grid container alignItems="center" spacing={2}>
-                                                <Grid item xs={9}>
+                                                <Grid sx={{ width: '75%' }}>
                                                     <ListItemText
-                                                        primary={template.name}
+                                                        primary={template.template_name}
                                                         secondary={template.description || 'بدون توضیح'}
                                                         sx={{ textAlign: 'right' }}
                                                     />
                                                 </Grid>
-                                                <Grid item xs={3}>
+                                                <Grid sx={{ width: '25%' }}>
                                                     <Button
                                                         variant="contained"
                                                         fullWidth

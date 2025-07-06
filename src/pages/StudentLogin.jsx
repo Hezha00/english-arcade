@@ -30,20 +30,29 @@ export default function StudentLogin() {
         setIsLoading(true)
         setErrorMsg('')
 
-        const { data, error } = await supabase
-            .from('students')
-            .select('*')
-            .eq('username', username.trim())
-            .eq('password', password.trim())
-            .maybeSingle()
-
-        if (error || !data) {
+        const email = `${username.trim()}@arcade.dev`
+        // 1. Try to sign in with Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+            email,
+            password: password.trim()
+        })
+        if (authError || !authData?.user) {
             setErrorMsg('❌ نام کاربری یا رمز عبور اشتباه است')
             setIsLoading(false)
             return
         }
-
-        localStorage.setItem('student', JSON.stringify(data))
+        // 2. Fetch student row by auth_id
+        const { data: student, error: dbError } = await supabase
+            .from('students')
+            .select('*')
+            .eq('auth_id', authData.user.id)
+            .maybeSingle()
+        if (dbError || !student) {
+            setErrorMsg('❌ حساب کاربری پیدا نشد')
+            setIsLoading(false)
+            return
+        }
+        localStorage.setItem('student', JSON.stringify(student))
         navigate('/student-dashboard')
         setIsLoading(false)
     }

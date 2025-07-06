@@ -22,13 +22,13 @@ export default function Assignments() {
     }, [])
 
     const fetchClassrooms = async () => {
-        const { data: user } = await supabase.auth.getUser()
-        const teacherId = user.user.id
+        const { data: auth } = await supabase.auth.getUser()
+        const teacherAuthId = auth?.user?.id
 
         const { data } = await supabase
             .from('classrooms')
             .select('name')
-            .eq('teacher_id', teacherId)
+            .eq('teacher_id', teacherAuthId)
 
         setClassrooms(data || [])
     }
@@ -116,7 +116,7 @@ export default function Assignments() {
                     />
                     <Grid container spacing={2}>
                         {[0, 1, 2, 3].map(j => (
-                            <Grid item xs={6} key={j}>
+                            <Grid sx={{ width: '50%' }} key={j}>
                                 <TextField
                                     label={`گزینه ${j + 1}`}
                                     fullWidth margin="dense"

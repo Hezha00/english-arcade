@@ -175,21 +175,21 @@ export default function ClassroomDetails() {
                             <React.Fragment key={s.id}>
                                 <ListItem disablePadding>
                                     <Grid container alignItems="center" sx={{ px: 2, py: 1 }}>
-                                        <Grid item xs={1}>
+                                        <Grid sx={{ width: '8.33%' }}>
                                             <Tooltip title="حذف دانش‌آموز">
                                                 <IconButton onClick={() => handleDelete(s.id)}>
                                                     <DeleteIcon sx={{ color: '#f00' }} />
                                                 </IconButton>
                                             </Tooltip>
                                         </Grid>
-                                        <Grid item xs={1}>
+                                        <Grid sx={{ width: '8.33%' }}>
                                             <Tooltip title="کپی اطلاعات">
                                                 <IconButton onClick={() => handleCopy(s)}>
                                                     <ContentCopyIcon sx={{ color: '#fff' }} />
                                                 </IconButton>
                                             </Tooltip>
                                         </Grid>
-                                        <Grid item xs={10}>
+                                        <Grid sx={{ width: '83.33%' }}>
                                             <ListItemText
                                                 primary={s.name}
                                                 secondary={

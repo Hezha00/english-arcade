@@ -32,16 +32,13 @@ export default function StudentGames() {
     useEffect(() => {
         const fetchGames = async () => {
             if (!student?.id) return
+            // Use the RPC for reliability
             const { data, error } = await supabase
-                .from('game_assignments')
-                .select('game_id, classroom, games(name), expires_at')
-                .eq('classroom', student.classroom)
-
+                .rpc('get_student_games', { student_auth_id: student.auth_id })
             if (error) console.error(error)
             setGames(data || [])
             setLoading(false)
         }
-
         fetchGames()
     }, [student])
 
@@ -82,7 +79,7 @@ export default function StudentGames() {
                                     >
                                         <SportsEsportsIcon style={{ marginLeft: 8, color: '#4f46e5' }} />
                                         <ListItemText
-                                            primary={g.games?.name || '---'}
+                                            primary={g.game_name || '---'}
                                             secondary={`کلاس: ${g.classroom} | ضرب‌العجل: ${g.expires_at
                                                     ? moment(g.expires_at).format('jYYYY/jMM/jDD HH:mm')
                                                     : '---'

@@ -6,7 +6,6 @@ import {
 } from '@mui/material'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
-import TeacherLayout from '../components/TeacherLayout'
 import moment from 'moment-jalaali'
 
 export default function GameDetails() {
@@ -53,30 +52,38 @@ export default function GameDetails() {
     }
 
     const handleDeleteAssignment = async () => {
-        const confirm = window.confirm('آیا می‌خواهید این بازی را از کلاس حذف کنید؟')
+        const confirm = window.confirm('آیا می‌خواهید این بازی را از کل سایت حذف کنید؟ این کار غیرقابل بازگشت است.')
         if (!confirm) return
 
+        // Delete all assignments for this game
         await supabase
             .from('game_assignments')
             .delete()
             .eq('game_id', gameId)
-            .eq('classroom', classroom)
 
+        // Delete all student_game_status for this game
         await supabase
             .from('student_game_status')
             .delete()
             .eq('game_id', gameId)
-            .eq('classroom', classroom)
 
-        alert('✅ بازی حذف شد')
-        navigate('/teacher-games')
+        // Delete the game itself
+        const { error } = await supabase
+            .from('games')
+            .delete()
+            .eq('id', gameId)
+
+        if (error) alert('خطا در حذف بازی')
+        else {
+            alert('✅ بازی به طور کامل حذف شد')
+            navigate('/teacher-games')
+        }
     }
 
     if (loading) return <CircularProgress sx={{ mt: 5 }} />
 
     return (
-        <TeacherLayout>
-            <Container dir="rtl" sx={{ py: 4 }}>
+        <Container dir="rtl" sx={{ py: 4 }}>
                 <Typography variant="h5" fontWeight="bold" gutterBottom>
                     🎯 جزئیات بازی: {gameId} | کلاس: {classroom}
                 </Typography>
@@ -121,6 +128,5 @@ export default function GameDetails() {
                     </Paper>
                 )}
             </Container>
-        </TeacherLayout>
     )
 }

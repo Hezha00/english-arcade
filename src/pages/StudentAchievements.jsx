@@ -21,7 +21,7 @@ export default function StudentAchievements() {
             <Typography variant="h5" gutterBottom>دستاوردهای من</Typography>
 
             <Grid container spacing={2}>
-                <Grid item xs={6} md={4}>
+                <Grid sx={{ width: { xs: '50%', md: '33.33%' } }}>
                     <Paper sx={{ p: 2, textAlign: 'center' }}>
                         <Typography variant="h1">🔥</Typography>
                         <Typography variant="subtitle2">

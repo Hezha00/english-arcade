@@ -37,13 +37,13 @@ export default function StudentDashboard() {
             <Typography>🏫 کلاس: {student.classroom}</Typography>
 
             <Grid container spacing={3} sx={{ mt: 3 }}>
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
                     <Paper
                         sx={{
                             p: 3,
                             borderRadius: 3,
-                            bgcolor: 'rgba(255,255,255,0.12)',
-                            backdropFilter: 'blur(6px)',
+                            bgcolor: 'rgba(255,255,255,0.15)',
+                            backdropFilter: 'blur(8px)',
                             color: '#fff'
                         }}
                     >
@@ -56,13 +56,13 @@ export default function StudentDashboard() {
                     </Paper>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
                     <Paper
                         sx={{
                             p: 3,
                             borderRadius: 3,
-                            bgcolor: 'rgba(255,255,255,0.12)',
-                            backdropFilter: 'blur(6px)',
+                            bgcolor: 'rgba(255,255,255,0.15)',
+                            backdropFilter: 'blur(8px)',
                             color: '#fff'
                         }}
                     >
@@ -79,13 +79,13 @@ export default function StudentDashboard() {
                     </Paper>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
                     <Paper
                         sx={{
                             p: 3,
                             borderRadius: 3,
-                            bgcolor: 'rgba(255,255,255,0.12)',
-                            backdropFilter: 'blur(6px)',
+                            bgcolor: 'rgba(255,255,255,0.15)',
+                            backdropFilter: 'blur(8px)',
                             color: '#fff'
                         }}
                     >

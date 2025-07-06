@@ -20,13 +20,13 @@ export default function ResultsDashboard() {
     }, [selectedClass])
 
     const fetchClassrooms = async () => {
-        const { data: user } = await supabase.auth.getUser()
-        const teacherId = user.user.id
+        const { data: auth } = await supabase.auth.getUser()
+        const teacherAuthId = auth?.user?.id
 
         const { data } = await supabase
             .from('classrooms')
             .select('name')
-            .eq('teacher_id', teacherId)
+            .eq('teacher_id', teacherAuthId)
 
         setClassrooms(data || [])
     }

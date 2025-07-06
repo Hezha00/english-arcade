@@ -25,18 +25,18 @@ export default function Students() {
     }, [])
 
     const fetchData = async () => {
-        const { data: user } = await supabase.auth.getUser()
-        const teacherId = user.user.id
+        const { data: auth } = await supabase.auth.getUser()
+        const teacherAuthId = auth?.user?.id
 
         const { data: cls } = await supabase
             .from('classrooms')
-            .select('*')
-            .eq('teacher_id', teacherId)
+            .select('name')
+            .eq('teacher_id', teacherAuthId)
 
         const { data: stu } = await supabase
             .from('students')
             .select('*')
-            .eq('teacher_id', teacherId)
+            .eq('teacher_id', teacherAuthId)
             .order('created_at', { ascending: false })
 
         setClassrooms(cls || [])

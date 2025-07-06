@@ -52,6 +52,22 @@ export default function Classrooms() {
             return
         }
 
+        if (students.length === 0) {
+            try {
+                const { data: fallbackClasses, error: fallbackError } = await supabase
+                    .from('classrooms')
+                    .select('name, school')
+                    .eq('teacher_id', uid)
+                if (fallbackError) throw fallbackError
+                setClasses((fallbackClasses || []).map(c => ({ classroom: c.name, school: c.school, count: 0 })))
+            } catch (err) {
+                setClasses([])
+                console.error('❌ Error fetching fallback classes:', err)
+            }
+            setLoading(false)
+            return
+        }
+
         const grouped = {}
         students.forEach(({ classroom, school }) => {
             if (!classroom) return
@@ -107,9 +123,20 @@ export default function Classrooms() {
             body: payload
         })
 
-        if (error) {
-            console.error('❌ Edge Function error:', error.message || error)
-            alert('❌ عملیات ناموفق بود. خطا در ایجاد کلاس یا دانش‌آموزان.')
+        let upsertError = null
+        if (!error) {
+            const { error: upErr } = await supabase.from('classrooms').upsert({
+                name: classroom.trim(),
+                school: school.trim(),
+                teacher_id: teacherId,
+                year_level: yearLevel.trim(),
+                created_at: new Date().toISOString()
+            }, { onConflict: ['name', 'teacher_id'] })
+            upsertError = upErr
+        }
+
+        if (error || upsertError) {
+            alert('❌ عملیات ناموفق بود. خطا در ایجاد کلاس یا دانش‌آموزان.\n' + (error?.message || '') + (upsertError?.message || ''))
             setSubmitting(false)
             return
         }
@@ -123,6 +150,9 @@ export default function Classrooms() {
         setStudentFields([{ first: '', last: '' }])
         if (teacherId) await fetchClasses(teacherId)
         setSubmitting(false)
+        if (studentData.length === 0) {
+            alert('کلاس با موفقیت ایجاد شد (بدون دانش‌آموز).')
+        }
     }
 
     return (

@@ -91,7 +91,7 @@ export default function StudentAssignments() {
                 ) : (
                     <Grid container spacing={3}>
                         {assignments.map((a) => (
-                            <Grid item xs={12} sm={6} md={4} key={a.assignment_id}>
+                            <Grid sx={{ width: { xs: '100%', sm: '50%', md: '33.33%' } }} key={a.assignment_id}>
                                 <Paper sx={{ p: 3, borderRadius: 4, bgcolor: a.isExpired ? '#f1f1f1' : 'rgba(255,255,255,0.95)' }}>
                                     <Typography variant="h6" fontWeight="bold" gutterBottom>
                                         {a.title}
