@@ -13,15 +13,22 @@ export default function CreateSentenceStructureGame() {
   const [success, setSuccess] = useState(false)
 
   const validate = () => {
-    if (!name.trim()) return setError('نام بازی الزامی است')
-    if (sentencesText.trim().split('\n').filter(s => s.trim()).length === 0) return setError('حداقل یک جمله باید وارد شود')
-    return true
+    if (!name.trim()) {
+      setError('نام بازی الزامی است');
+      return false;
+    }
+    if (sentencesText.trim().split('\n').filter(s => s.trim()).length === 0) {
+      setError('حداقل یک جمله باید وارد شود');
+      return false;
+    }
+    setError(''); // Clear error if validation passes
+    return true;
   }
 
   const handleSubmit = async () => {
-    if (!validate()) return
-    setLoading(true)
-    setError('')
+    if (!validate()) return;
+    // setError(''); // No longer needed here as validate() clears it on success
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user?.id) throw new Error('حساب معلم یافت نشد')

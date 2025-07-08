@@ -37,33 +37,56 @@ export default function TeacherAuth() {
 
         const uid = auth.user.id
 
-        const { data: teacher, error: dbErr } = await supabase
+        // Attempt to fetch existing teacher profile
+        const { data: existingTeacher, error: fetchErr } = await supabase
             .from('teachers')
             .select('*')
             .eq('auth_id', uid)
             .single()
 
-        if (dbErr?.code === 'PGRST116') {
-            const insert = await supabase.from('teachers').insert([
-                {
-                    auth_id: uid,
-                    email: auth.user.email,
-                    username: 'placeholder',
-                    role: 'teacher',
-                    created_at: new Date().toISOString()
-                }
-            ])
+        let teacherProfile = existingTeacher;
 
-            if (insert.error) {
-                console.error('❌ Insert failed:', insert.error.message)
-                setErrorMsg('خطا در ایجاد حساب معلم. لطفاً دوباره تلاش کنید.')
-                setIsLoading(false)
-                return
+        // If teacher profile doesn't exist (PGRST116: 0 rows), create it
+        if (fetchErr?.code === 'PGRST116') {
+            const { data: newTeacherData, error: insertError } = await supabase
+                .from('teachers')
+                .insert([
+                    {
+                        auth_id: uid,
+                        email: auth.user.email,
+                        username: 'placeholder', // Default username
+                        role: 'teacher',         // Default role
+                        created_at: new Date().toISOString()
+                    }
+                ])
+                .select() // Select the newly inserted row
+                .single(); // Expect a single row back
+
+            if (insertError || !newTeacherData) {
+                console.error('❌ Insert failed:', insertError?.message);
+                setErrorMsg('خطا در ایجاد حساب معلم. لطفاً دوباره تلاش کنید.');
+                setIsLoading(false);
+                return;
             }
+            teacherProfile = newTeacherData; // Use the newly created profile
+        } else if (fetchErr) {
+            // Handle other errors during the initial fetch
+            console.error('❌ DB error fetching teacher:', fetchErr.message);
+            setErrorMsg('خطا در بازیابی اطلاعات معلم.');
+            setIsLoading(false);
+            return;
+        }
+        
+        // Ensure teacherProfile is not null before accessing properties
+        if (!teacherProfile) {
+            console.error('❌ Teacher profile is null after fetch/insert attempt.');
+            setErrorMsg('خطا در پردازش اطلاعات حساب معلم.');
+            setIsLoading(false);
+            return;
         }
 
         const isAdmin =
-            (teacher?.role && teacher.role.toLowerCase() === 'admin') ||
+            (teacherProfile.role && teacherProfile.role.toLowerCase() === 'admin') ||
             email.toLowerCase() === 'master@admin.com'
 
         navigate(isAdmin ? '/admin-dashboard' : '/dashboard')

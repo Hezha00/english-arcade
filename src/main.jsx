@@ -58,7 +58,16 @@ import CreateSentenceStructureGame from './pages/CreateSentenceStructureGame'
 import './index.css'
 
 const root = ReactDOM.createRoot(document.getElementById('root'))
-const student = JSON.parse(localStorage.getItem('student'))
+let student = null; // Default to null
+try {
+  const studentData = localStorage.getItem('student');
+  if (studentData) {
+    student = JSON.parse(studentData);
+  }
+} catch (error) {
+  console.error("Failed to parse student data from localStorage:", error);
+  // student remains null, StudentAppWrapper will redirect to login
+}
 
 root.render(
   <BrowserRouter>
@@ -128,11 +137,9 @@ root.render(
         path="/dashboard"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <Dashboard />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <Dashboard />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -140,11 +147,9 @@ root.render(
         path="/classrooms"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <Classrooms />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <Classrooms />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -152,11 +157,9 @@ root.render(
         path="/classrooms/:className"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <ClassroomDetails />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <ClassroomDetails />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -164,11 +167,9 @@ root.render(
         path="/account-settings"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <AccountSettings />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <AccountSettings />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -176,11 +177,9 @@ root.render(
         path="/teacher-games"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <TeacherGamesDashboard />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <TeacherGamesDashboard />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -188,11 +187,9 @@ root.render(
         path="/game-repository"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <GameRepository />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <GameRepository />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -200,11 +197,9 @@ root.render(
         path="/game-store"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <GameStore />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <GameStore />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -212,11 +207,9 @@ root.render(
         path="/assign-game/:gameId"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <AssignGame />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <AssignGame />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -224,11 +217,9 @@ root.render(
         path="/create-game"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <CreateGame />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <CreateGame />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -236,11 +227,9 @@ root.render(
         path="/teacher-assignments-list"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <TeacherAssignments />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <TeacherAssignments />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -248,11 +237,9 @@ root.render(
         path="/add-assignment"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <NewAssignmentForm />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <NewAssignmentForm />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -260,11 +247,9 @@ root.render(
         path="/create-assignment"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <CreateAssignment />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <CreateAssignment />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -272,11 +257,9 @@ root.render(
         path="/add-questions"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <AddQuestions />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <AddQuestions />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -284,11 +267,9 @@ root.render(
         path="/teacher-assignments"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <TeacherAssignmentsDashboard />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <TeacherAssignmentsDashboard />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -296,11 +277,9 @@ root.render(
         path="/teacher-grading"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <TeacherGradingPanel />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <TeacherGradingPanel />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -308,11 +287,9 @@ root.render(
         path="/teacher-results-admin"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <TeacherResultsAdmin />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <TeacherResultsAdmin />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -320,11 +297,9 @@ root.render(
         path="/teacher-feedback"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <TeacherFeedbackDashboard />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <TeacherFeedbackDashboard />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -332,11 +307,9 @@ root.render(
         path="/teacher-analytics"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <TeacherAnalytics />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <TeacherAnalytics />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -344,11 +317,9 @@ root.render(
         path="/teacher-dashboard"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <TeacherDashboard />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <TeacherDashboard />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -356,11 +327,9 @@ root.render(
         path="/teacher-game/:gameId/details"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <GameDetails />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <GameDetails />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -368,11 +337,9 @@ root.render(
         path="/create-word-matching"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <CreateWordMatchingGame />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <CreateWordMatchingGame />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -380,11 +347,9 @@ root.render(
         path="/create-memory-puzzle"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <CreateMemoryPuzzleGame />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <CreateMemoryPuzzleGame />
+            </TeacherLayout>
           </SessionGuard>
         }
       />
@@ -392,11 +357,9 @@ root.render(
         path="/create-sentence-structure"
         element={
           <SessionGuard>
-            <ProtectedRoute>
-              <TeacherLayout>
-                <CreateSentenceStructureGame />
-              </TeacherLayout>
-            </ProtectedRoute>
+            <TeacherLayout>
+              <CreateSentenceStructureGame />
+            </TeacherLayout>
           </SessionGuard>
         }
       />

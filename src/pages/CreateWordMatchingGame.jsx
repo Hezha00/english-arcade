@@ -23,15 +23,22 @@ export default function CreateWordMatchingGame() {
   const removePair = i => setWordPairs(wordPairs.length > 1 ? wordPairs.filter((_, idx) => idx !== i) : wordPairs)
 
   const validate = () => {
-    if (!name.trim()) return setError('نام بازی الزامی است')
-    if (wordPairs.some(p => !p.english.trim() || !p.persian.trim())) return setError('همه جفت‌ها باید کامل باشند')
-    return true
+    if (!name.trim()) {
+      setError('نام بازی الزامی است');
+      return false;
+    }
+    if (wordPairs.some(p => !p.english.trim() || !p.persian.trim())) {
+      setError('همه جفت‌ها باید کامل باشند');
+      return false;
+    }
+    setError(''); // Clear error if validation passes
+    return true;
   }
 
   const handleSubmit = async () => {
-    if (!validate()) return
-    setLoading(true)
-    setError('')
+    if (!validate()) return;
+    // setError(''); // No longer needed here as validate() clears it on success
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user?.id) throw new Error('حساب معلم یافت نشد')

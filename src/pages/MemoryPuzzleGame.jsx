@@ -21,6 +21,7 @@ export default function MemoryPuzzleGame() {
     const [attempts, setAttempts] = useState(0)
     const [maxAttempts, setMaxAttempts] = useState(20)
     const [timeLeft, setTimeLeft] = useState(180)
+    const [initialTimeLimit, setInitialTimeLimit] = useState(180); // For time_spent calculation
     const [timerActive, setTimerActive] = useState(false)
     const [finished, setFinished] = useState(false)
     const [score, setScore] = useState(0)
@@ -40,7 +41,9 @@ export default function MemoryPuzzleGame() {
             }
             setGameData(data)
             setMaxAttempts(data.max_retries || 20)
-            setTimeLeft((data.duration_min || 3) * 60)
+            const initialTime = (data.duration_min || 3) * 60;
+            setTimeLeft(initialTime);
+            setInitialTimeLimit(initialTime); // Store initial time limit
             // Prepare cards
             const pairs = (data.game_content?.items || []).slice(0, 8)
             const cardList = shuffle([
@@ -107,16 +110,36 @@ export default function MemoryPuzzleGame() {
     const handleSubmit = async () => {
         if (submitted) return
         setSubmitted(true)
+
+        const studentInfoString = localStorage.getItem('student');
+        if (!studentInfoString) {
+            alert('خطا: اطلاعات دانش‌آموز یافت نشد. لطفاً دوباره وارد شوید.');
+            setSubmitted(false); // Allow retry
+            return;
+        }
+
+        let studentId;
+        try {
+            const studentInfo = JSON.parse(studentInfoString);
+            studentId = studentInfo?.id; // Assuming 'id' is the field for student's ID
+            if (!studentId) throw new Error("Student ID not found in localStorage data.");
+        } catch (parseError) {
+            console.error("Error parsing student data from localStorage:", parseError);
+            alert('خطا در پردازش اطلاعات دانش‌آموز.');
+            setSubmitted(false);
+            return;
+        }
+
         try {
             const { error } = await supabase
                 .from('student_game_status')
                 .insert({
-                    student_id: 'YOUR_STUDENT_ID', // Replace with actual student ID
+                    student_id: studentId,
                     game_id: gameId,
                     game_name: gameData.name,
                     score: score,
                     attempts: attempts,
-                    time_spent: 180 - timeLeft, // Assuming 180 seconds for time spent
+                    time_spent: initialTimeLimit - timeLeft,
                     completed_at: new Date().toISOString(),
                 })
                 .select()

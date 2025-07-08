@@ -24,7 +24,7 @@ export default function useSupabaseQuery({ table, filters = [], single = false, 
         }
 
         fetch()
-    }, [table, filters, single, select])
+    }, [table, JSON.stringify(filters), single, select]) // Stringify filters
 
     return { data, loading, error }
 }
