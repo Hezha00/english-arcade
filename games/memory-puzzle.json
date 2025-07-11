@@ -1,0 +1,15 @@
+{
+  "template_name": "بازی حافظه (Memory Puzzle)",
+  "type": "memory-puzzle",
+  "description": "یک بازی حافظه‌ای برای تطبیق کلمات انگلیسی با معانی فارسی در یک شبکه ۴×۴.",
+  "word_pairs": [
+    { "english": "Apple", "persian": "سیب" },
+    { "english": "Book", "persian": "کتاب" },
+    { "english": "Sun", "persian": "خورشید" },
+    { "english": "Water", "persian": "آب" },
+    { "english": "Tree", "persian": "درخت" },
+    { "english": "Car", "persian": "ماشین" },
+    { "english": "Dog", "persian": "سگ" },
+    { "english": "School", "persian": "مدرسه" }
+  ]
+} 

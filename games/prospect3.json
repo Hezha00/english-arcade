@@ -1,0 +1,7 @@
+{
+  "words": [
+    { "emoji": "✈️", "english": "airplane", "description": "A flying vehicle.", "persian": "هواپیما" },
+    { "emoji": "⏰", "english": "clock", "description": "Shows the time.", "persian": "ساعت" },
+    { "emoji": "🍞", "english": "bread", "description": "A food made from flour.", "persian": "نان" }
+  ]
+} 

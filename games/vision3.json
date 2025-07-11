@@ -1,0 +1,7 @@
+{
+  "words": [
+    { "emoji": "📱", "english": "phone", "description": "A device to call and text.", "persian": "تلفن همراه" },
+    { "emoji": "🚴", "english": "bicycle", "description": "A two-wheeled vehicle you pedal.", "persian": "دوچرخه" },
+    { "emoji": "🏖️", "english": "beach", "description": "A sandy place by the sea.", "persian": "ساحل" }
+  ]
+} 

@@ -1,0 +1,7 @@
+{
+  "words": [
+    { "emoji": "🍎", "english": "apple", "description": "A round red or green fruit.", "persian": "سیب" },
+    { "emoji": "🐶", "english": "dog", "description": "A common four-legged pet.", "persian": "سگ" },
+    { "emoji": "🏫", "english": "school", "description": "A place where students learn.", "persian": "مدرسه" }
+  ]
+} 
