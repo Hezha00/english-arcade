@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
-    Box, Paper, Typography, TextField, Button, Snackbar, MenuItem
+    Box, Paper, Typography, TextField, Button, Snackbar, MenuItem, Divider
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
@@ -12,11 +12,22 @@ const plans = [
     { label: '۲ سال', value: '24 months' }
 ]
 
+const selfLearnerPlans = [
+  { label: 'بسته ی برنز (۱ ماه)', value: 'bronze' },
+  { label: 'بسته ی نقره ای (۳ ماه)', value: 'silver' },
+  { label: 'بسته ی طلایی (۹ ماه)', value: 'gold' },
+  { label: 'بسته ی الماس (۱۲ ماه)', value: 'diamond' }
+];
+
 export default function AdminCreateLicense() {
     const [duration, setDuration] = useState('1 month')
     const [code, setCode] = useState('')
     const [snack, setSnack] = useState('')
     const [loading, setLoading] = useState(false)
+    const [slPlan, setSlPlan] = useState('bronze');
+    const [slCode, setSlCode] = useState('');
+    const [slSnack, setSlSnack] = useState('');
+    const [slLoading, setSlLoading] = useState(false);
     const navigate = useNavigate()
 
     // 🔐 Check admin role on load
@@ -49,6 +60,16 @@ export default function AdminCreateLicense() {
         setCode(output)
     }
 
+    // 🧪 Generate random license code for self-learner
+    const generateSlCode = () => {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let output = '';
+        for (let i = 0; i < 8; i++) {
+            output += chars[Math.floor(Math.random() * chars.length)];
+        }
+        setSlCode(output);
+    };
+
     // ✅ Insert new license
     const handleCreate = async () => {
         if (!code || !duration) {
@@ -76,6 +97,52 @@ export default function AdminCreateLicense() {
             setCode('')
         }
     }
+
+    // ✅ Insert new self-learner license
+    const handleCreateSl = async () => {
+        if (!slCode || !slPlan) {
+            setSlSnack('لطفاً کد و پلن را وارد کنید');
+            return;
+        }
+        setSlLoading(true);
+        try {
+            // Get plan id from self_learner_plans using slug
+            const { data: plan, error: planError } = await supabase
+                .from('self_learner_plans')
+                .select('id')
+                .eq('slug', slPlan)
+                .maybeSingle();
+            if (planError) {
+                console.error('Supabase plan fetch error:', planError);
+                setSlSnack('خطا در دریافت پلن: ' + planError.message);
+                setSlLoading(false);
+                return;
+            }
+            if (!plan) {
+                setSlSnack('پلن انتخابی پیدا نشد. لطفاً جدول پلن‌ها را بررسی کنید.');
+                setSlLoading(false);
+                return;
+            }
+            const { error } = await supabase.from('self_learner_licenses').insert([
+                {
+                    license_key: slCode,
+                    plan_id: plan.id,
+                    is_used: false
+                }
+            ]);
+            setSlLoading(false);
+            if (error) {
+                setSlSnack('❌ خطا در ایجاد لایسنس: ' + error.message);
+            } else {
+                setSlSnack('✅ لایسنس دانش‌آموز مستقل با موفقیت ثبت شد');
+                setSlCode('');
+            }
+        } catch (err) {
+            setSlSnack('خطای شبکه یا Supabase: ' + err.message);
+            setSlLoading(false);
+            console.error('Network or Supabase error:', err);
+        }
+    };
 
     return (
         <Box
@@ -106,6 +173,8 @@ export default function AdminCreateLicense() {
                 <TextField
                     select
                     fullWidth
+                    id="teacher-license-duration"
+                    name="teacher-license-duration"
                     label="مدت زمان اشتراک"
                     value={duration}
                     onChange={(e) => setDuration(e.target.value)}
@@ -120,6 +189,8 @@ export default function AdminCreateLicense() {
 
                 <TextField
                     fullWidth
+                    id="teacher-license-code"
+                    name="teacher-license-code"
                     label="کد لایسنس"
                     value={code}
                     onChange={(e) => setCode(e.target.value.toUpperCase())}
@@ -149,6 +220,58 @@ export default function AdminCreateLicense() {
                     autoHideDuration={3000}
                     onClose={() => setSnack('')}
                     message={snack}
+                />
+
+                <Divider sx={{ my: 4 }} />
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                    🔑 ایجاد لایسنس دانش‌آموز مستقل
+                </Typography>
+                <TextField
+                    select
+                    fullWidth
+                    id="self-learner-plan"
+                    name="self-learner-plan"
+                    label="پلن دانش‌آموز مستقل"
+                    value={slPlan}
+                    onChange={e => setSlPlan(e.target.value)}
+                    sx={{ my: 2 }}
+                >
+                    {selfLearnerPlans.map((p) => (
+                        <MenuItem key={p.value} value={p.value}>
+                            {p.label}
+                        </MenuItem>
+                    ))}
+                </TextField>
+                <TextField
+                    fullWidth
+                    id="self-learner-license-code"
+                    name="self-learner-license-code"
+                    label="کد لایسنس"
+                    value={slCode}
+                    onChange={e => setSlCode(e.target.value.toUpperCase())}
+                    sx={{ mb: 2 }}
+                />
+                <Button
+                    fullWidth
+                    variant="outlined"
+                    onClick={generateSlCode}
+                    sx={{ mb: 2 }}
+                >
+                    🔁 تولید کد تصادفی
+                </Button>
+                <Button
+                    fullWidth
+                    variant="contained"
+                    onClick={handleCreateSl}
+                    disabled={slLoading}
+                >
+                    {slLoading ? 'در حال ثبت...' : 'ثبت لایسنس دانش‌آموز مستقل'}
+                </Button>
+                <Snackbar
+                    open={!!slSnack}
+                    autoHideDuration={3000}
+                    onClose={() => setSlSnack('')}
+                    message={slSnack}
                 />
             </Paper>
         </Box>

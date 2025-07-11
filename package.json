@@ -20,6 +20,7 @@
     "@supabase/supabase-js": "^2.50.2",
     "@vercel/speed-insights": "^1.2.0",
     "aos": "^2.3.4",
+    "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "file-saver": "^2.0.5",
     "jalaali-react-date-picker": "^1.0.19",
