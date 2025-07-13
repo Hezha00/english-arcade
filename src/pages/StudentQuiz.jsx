@@ -87,11 +87,27 @@ export default function StudentQuiz() {
         setScore(percentage)
         setSubmitted(true)
 
-        await supabase.from('student_game_status').insert({
+        // Ensure teacher_id is present
+        let teacherId = student.teacher_id
+        if (!teacherId && student.id) {
+            // Fetch from students table if missing
+            const { data: studentRow } = await supabase
+                .from('students')
+                .select('teacher_id')
+                .eq('id', student.id)
+                .single()
+            teacherId = studentRow?.teacher_id || null
+        }
+
+        await supabase.from('results').insert({
             student_id: student.id,
-            game_id: gameId,
+            username: student.username,
+            classroom: student.classroom,
+            teacher_id: teacherId,
             score: percentage,
-            completed_at: new Date().toISOString()
+            total: gameData.wordPairs.length,
+            submitted_at: new Date().toISOString(),
+            assignment_id: gameId // or the correct assignment id
         })
     }
 
