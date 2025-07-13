@@ -1,0 +1,9 @@
+{
+    "templates": [
+        {
+            "name": "Word Matching",
+            "description": "connect words",
+            "file_url": "/games/WordMatchingGame.html"
+        }
+    ]
+}
