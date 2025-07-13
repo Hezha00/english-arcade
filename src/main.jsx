@@ -23,6 +23,12 @@ import StudentResultsHistory from './pages/StudentResultsHistory'
 import StudentGames from './pages/StudentGames'
 import MemoryPuzzleGame from './pages/MemoryPuzzleGame'
 import SentenceStructureGame from './pages/SentenceStructureGame'
+import IndependentLearning from './pages/IndependentLearning';
+import IndependentTest from './pages/IndependentTest';
+import SelfLearnerLogin from './pages/SelfLearnerLogin';
+import SelfLearnerSubscription from './pages/SelfLearnerSubscription';
+import SelfLearnerAuthChoice from './pages/SelfLearnerAuthChoice';
+import SelfLearnerSignup from './pages/SelfLearnerSignup';
 
 // Teacher pages
 import TeacherAuth from './pages/TeacherAuth'
@@ -75,6 +81,12 @@ root.render(
       {/* 🔸 Public Routes */}
       <Route path="/" element={<LandingScreen />} />
       <Route path="/student-login" element={<StudentLogin />} />
+      <Route path="/independent-learning/:book" element={<IndependentLearning />} />
+      <Route path="/independent-test/:book" element={<IndependentTest />} />
+      <Route path="/self-learner-login" element={<SelfLearnerLogin />} />
+      <Route path="/self-learner-subscription" element={<SelfLearnerSubscription />} />
+      <Route path="/self-learner-auth" element={<SelfLearnerAuthChoice />} />
+      <Route path="/self-learner-signup" element={<SelfLearnerSignup />} />
 
       {/* 👨‍🎓 Student Dashboard Routes with layout wrapper */}
       <Route

@@ -10,6 +10,12 @@ import {
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TelegramIcon from '@mui/icons-material/Telegram';
+import PhoneIcon from '@mui/icons-material/Phone';
 
 export default function StudentLogin() {
     const [username, setUsername] = useState('')
@@ -17,6 +23,7 @@ export default function StudentLogin() {
     const [errorMsg, setErrorMsg] = useState('')
     const [isLoading, setIsLoading] = useState(false)
     const navigate = useNavigate()
+    const [pricingOpen, setPricingOpen] = useState(false);
 
     useEffect(() => {
         document.body.className = 'login'

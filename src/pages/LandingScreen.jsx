@@ -9,6 +9,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import SchoolIcon from '@mui/icons-material/School'
 import BadgeIcon from '@mui/icons-material/Badge'
+import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
 
 export default function LandingScreen() {
     const navigate = useNavigate()
@@ -88,6 +89,29 @@ export default function LandingScreen() {
                         }}
                     >
                         👨‍🏫 معلم هستم
+                    </Button>
+
+                    <Button
+                        fullWidth
+                        onClick={() => navigate('/self-learner-auth')}
+                        startIcon={<EmojiObjectsIcon />}
+                        variant="outlined"
+                        sx={{
+                            mt: 2,
+                            fontSize: '1rem',
+                            py: 1.5,
+                            fontWeight: 600,
+                            borderRadius: 2,
+                            color: '#fff',
+                            borderColor: '#4ade80',
+                            '&:hover': {
+                                backgroundColor: 'rgba(74,222,128,0.08)',
+                                borderColor: '#4ade80',
+                                transform: 'scale(1.03)'
+                            }
+                        }}
+                    >
+                        🧑‍💻 یادگیرنده مستقل
                     </Button>
                 </Paper>
             </Container>

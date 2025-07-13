@@ -1,0 +1,7 @@
+{
+  "words": [
+    { "emoji": "💡", "english": "idea", "description": "A thought or suggestion.", "persian": "ایده" },
+    { "emoji": "🎵", "english": "music", "description": "Sounds that are sung or played.", "persian": "موسیقی" },
+    { "emoji": "🚀", "english": "rocket", "description": "A vehicle that flies into space.", "persian": "موشک" }
+  ]
+} 

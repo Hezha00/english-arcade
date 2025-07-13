@@ -1,0 +1,7 @@
+{
+  "words": [
+    { "emoji": "🚗", "english": "car", "description": "A vehicle with four wheels.", "persian": "ماشین" },
+    { "emoji": "📚", "english": "book", "description": "Something you read.", "persian": "کتاب" },
+    { "emoji": "🌳", "english": "tree", "description": "A tall plant with leaves.", "persian": "درخت" }
+  ]
+} 

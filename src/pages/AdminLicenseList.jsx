@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import {
     Box, Paper, Typography, List, ListItem, Divider, ListItemText, Chip,
-    CircularProgress, MenuItem, Select, FormControl, InputLabel, Alert
+    CircularProgress, MenuItem, Select, FormControl, InputLabel, Alert, Button
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
 import dayjs from 'dayjs'
@@ -12,6 +12,8 @@ export default function AdminLicenseList() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
     const [sortMode, setSortMode] = useState('newest')
+    const [selfLicenses, setSelfLicenses] = useState([])
+    const [selfLoading, setSelfLoading] = useState(true)
 
     useEffect(() => {
         const fetchLicenses = async () => {
@@ -21,6 +23,7 @@ export default function AdminLicenseList() {
             if (email !== 'superadminkhaledi@arcade.dev') {
                 setError('⛔ دسترسی غیرمجاز')
                 setLoading(false)
+                setSelfLoading(false)
                 return
             }
 
@@ -34,8 +37,19 @@ export default function AdminLicenseList() {
             } else {
                 setLicenses(data)
             }
-
             setLoading(false)
+
+            // Fetch self-learner licenses
+            const { data: selfData, error: selfError } = await supabase
+                .from('self_learner_licenses')
+                .select('*, plan:self_learner_plans(plan_title, slug), user:self_learners!self_learner_id(username,first_name,last_name)')
+
+            if (selfError) {
+                console.error('Self-learner license fetch failed:', selfError.message)
+            } else {
+                setSelfLicenses(selfData)
+            }
+            setSelfLoading(false)
         }
 
         fetchLicenses()
@@ -71,6 +85,33 @@ export default function AdminLicenseList() {
         if (duration.includes('3')) return 3
         return 1
     }
+
+    // Add a function to refresh both license lists
+    const refreshLicenses = async () => {
+        setLoading(true);
+        setSelfLoading(true);
+        setError('');
+        // Teacher licenses
+        const { data, error } = await supabase
+            .from('licenses')
+            .select('*, teacher:teachers(username, email)')
+        if (error) {
+            setError('⛔ خطا در بارگذاری لایسنس‌ها: ' + error.message)
+        } else {
+            setLicenses(data)
+        }
+        setLoading(false);
+        // Self-learner licenses
+        const { data: selfData, error: selfError } = await supabase
+            .from('self_learner_licenses')
+            .select('*, plan:self_learner_plans(plan_title, slug), user:self_learners!self_learner_id(username,first_name,last_name)')
+        if (selfError) {
+            console.error('Self-learner license fetch failed:', selfError.message)
+        } else {
+            setSelfLicenses(selfData)
+        }
+        setSelfLoading(false);
+    };
 
     if (loading) {
         return (
@@ -114,29 +155,30 @@ export default function AdminLicenseList() {
             >
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Typography variant="h6" fontWeight="bold">🎫 لیست لایسنس‌ها</Typography>
-
-                    <FormControl size="small" sx={{ minWidth: 160 }}>
-                        <InputLabel>مرتب‌سازی</InputLabel>
-                        <Select
-                            value={sortMode}
-                            label="مرتب‌سازی"
-                            onChange={(e) => setSortMode(e.target.value)}
-                        >
-                            <MenuItem value="newest">جدیدترین</MenuItem>
-                            <MenuItem value="oldest">قدیمی‌ترین</MenuItem>
-                            <MenuItem value="expired">منقضی‌شده</MenuItem>
-                            <MenuItem value="active">فعال</MenuItem>
-                        </Select>
-                    </FormControl>
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                        <FormControl size="small" sx={{ minWidth: 160 }}>
+                            <InputLabel>مرتب‌سازی</InputLabel>
+                            <Select
+                                value={sortMode}
+                                label="مرتب‌سازی"
+                                onChange={(e) => setSortMode(e.target.value)}
+                            >
+                                <MenuItem value="newest">جدیدترین</MenuItem>
+                                <MenuItem value="oldest">قدیمی‌ترین</MenuItem>
+                                <MenuItem value="expired">منقضی‌شده</MenuItem>
+                                <MenuItem value="active">فعال</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <Button variant="outlined" onClick={refreshLicenses}>🔄 بروزرسانی</Button>
+                    </Box>
                 </Box>
-
                 <List>
                     {filtered.map((l, idx) => (
                         <React.Fragment key={l.id}>
                             <ListItem alignItems="flex-start" sx={{ flexDirection: 'column', alignItems: 'flex-start' }}>
                                 <ListItemText
                                     primary={
-                                        <Typography fontWeight="bold">
+                                        <Typography component="span" fontWeight="bold">
                                             🔑 {l.code}
                                             <Chip label={l.duration} size="small" color="info" sx={{ mx: 1 }} />
                                             {l.is_used
@@ -163,6 +205,46 @@ export default function AdminLicenseList() {
                         </React.Fragment>
                     ))}
                 </List>
+                {/* Self-learner licenses section */}
+                <Divider sx={{ my: 4 }} />
+                <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>🧑‍💻 لایسنس‌های دانش‌آموز مستقل</Typography>
+                {selfLoading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 100 }}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                    <List>
+                        {selfLicenses.map((l, idx) => (
+                            <React.Fragment key={l.id}>
+                                <ListItem alignItems="flex-start" sx={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <ListItemText
+                                        primary={
+                                            <Typography component="span" fontWeight="bold">
+                                                🔑 {l.license_key}
+                                                <Chip label={l.plan?.plan_title || l.plan?.slug} size="small" color="info" sx={{ mx: 1 }} />
+                                                {l.is_used
+                                                    ? <Chip label="استفاده شده" color="success" size="small" />
+                                                    : <Chip label="در انتظار استفاده" color="warning" size="small" />}
+                                            </Typography>
+                                        }
+                                        secondary={
+                                            l.is_used ? (
+                                                <Typography variant="body2" sx={{ mt: 1 }}>
+                                                    👤 کاربر: {l.user ? ((l.user.first_name && l.user.last_name) ? `${l.user.first_name} ${l.user.last_name}` : l.user.username) : '[بدون نام]'}
+                                                    <br />
+                                                    📅 استفاده: {l.used_at
+                                                        ? new Date(l.used_at).toLocaleDateString('fa-IR')
+                                                        : '—'}
+                                                </Typography>
+                                            ) : '⬅️ هنوز استفاده نشده است'
+                                        }
+                                    />
+                                </ListItem>
+                                {idx < selfLicenses.length - 1 && <Divider />}
+                            </React.Fragment>
+                        ))}
+                    </List>
+                )}
             </Paper>
         </Box>
     )
