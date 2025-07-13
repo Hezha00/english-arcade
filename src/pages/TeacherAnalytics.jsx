@@ -11,6 +11,7 @@ export default function TeacherAnalytics() {
     const [selectedClass, setSelectedClass] = useState('')
     const [results, setResults] = useState([])
     const [loading, setLoading] = useState(false)
+    const [gameResults, setGameResults] = useState([])
 
     useEffect(() => {
         fetchClassrooms()
@@ -18,6 +19,7 @@ export default function TeacherAnalytics() {
 
     useEffect(() => {
         if (selectedClass) fetchResults()
+        if (selectedClass) fetchGameResults()
     }, [selectedClass])
 
     const fetchClassrooms = async () => {
@@ -39,6 +41,37 @@ export default function TeacherAnalytics() {
             .select('*')
             .eq('classroom', selectedClass)
         setResults(data || [])
+        setLoading(false)
+    }
+
+    const fetchGameResults = async () => {
+        setLoading(true)
+        // Get all students in the selected class
+        const { data: students } = await supabase
+            .from('students')
+            .select('id, name, username')
+            .eq('classroom', selectedClass)
+        if (!students) {
+            setGameResults([])
+            setLoading(false)
+            return
+        }
+        const studentIds = students.map(s => s.id)
+        // Fetch all game results for these students
+        const { data: gameData } = await supabase
+            .from('student_game_status')
+            .select('student_id, game_id, score, completed_at, game_name')
+            .in('student_id', studentIds)
+            .order('completed_at', { ascending: false })
+        // Join with student info
+        const resultsWithNames = (gameData || []).map(r => {
+            const student = students.find(s => s.id === r.student_id)
+            return {
+                ...r,
+                student_name: student?.name || student?.username || '---',
+            }
+        })
+        setGameResults(resultsWithNames)
         setLoading(false)
     }
 
@@ -140,6 +173,31 @@ export default function TeacherAnalytics() {
                                             <TableCell align="center">{idx + 1}</TableCell>
                                             <TableCell align="center">{s.username}</TableCell>
                                             <TableCell align="center">{s.avg.toFixed(2)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </Paper>
+                        <Paper sx={{ p: 3, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: '#fff', mt: 4 }}>
+                            <Typography variant="h6" gutterBottom>
+                                🎮 تاریخچه بازی‌های دانش‌آموزان این کلاس
+                            </Typography>
+                            <Table>
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell align="center">نام دانش‌آموز</TableCell>
+                                        <TableCell align="center">نام بازی</TableCell>
+                                        <TableCell align="center">امتیاز</TableCell>
+                                        <TableCell align="center">تاریخ</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {gameResults.map((r, idx) => (
+                                        <TableRow key={idx}>
+                                            <TableCell align="center">{r.student_name}</TableCell>
+                                            <TableCell align="center">{r.game_name || '---'}</TableCell>
+                                            <TableCell align="center">{r.score ?? '-'}</TableCell>
+                                            <TableCell align="center">{r.completed_at ? new Date(r.completed_at).toLocaleDateString('fa-IR') : '-'}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
