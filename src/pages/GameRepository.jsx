@@ -44,10 +44,17 @@ export default function GameRepository() {
             if (user?.id) {
                 setTeacherId(user.id)
 
-                const { data: downloads } = await supabase
+                // Fetch all downloads for this teacher
+                const { data: downloads, error, status } = await supabase
                     .from('downloaded_games')
-                    .select('template_name')
-                    .eq('teacher_id', user.id)
+                    .select('id, template_name')
+                    .match({ teacher_id: user.id });
+
+                // Only set error if not a 406 (no rows found)
+                if (error && status !== 406) {
+                    setError(error.message || 'خطا در بارگذاری قالب‌ها');
+                    return;
+                }
 
                 const names = downloads?.map(d => d.template_name) || []
                 setDownloadedNames(names)
@@ -79,12 +86,12 @@ export default function GameRepository() {
         if (!teacherId) return alert('❌ حساب کاربری یافت نشد');
         if (!window.confirm(`آیا مطمئن هستید که می‌خواهید بازی "${template.template_name}" را حذف کنید؟`)) return;
         try {
-            const { error } = await supabase
+            const { error, status } = await supabase
                 .from('downloaded_games')
                 .delete()
-                .eq('teacher_id', teacherId)
-                .eq('template_name', template.template_name);
-            if (error) throw error;
+                .match({ teacher_id: teacherId, template_name: template.template_name });
+            // Only throw if error is not 406 (406 just means nothing to delete)
+            if (error && status !== 406) throw error;
             setDownloadedNames(downloadedNames.filter(name => name !== template.template_name));
             alert('بازی از لیست دانلودهای شما حذف شد.');
         } catch (err) {
@@ -118,10 +125,33 @@ export default function GameRepository() {
                                 return (
                                     <React.Fragment key={i}>
                                         <ListItem>
-                                            <Grid container alignItems="center" spacing={2} direction="row-reverse">
-                                                {/* Uninstall button far left visually (first in row-reverse) */}
-                                                <Grid item sx={{ width: '10%', display: 'flex', justifyContent: 'flex-end' }}>
-                                                    
+                                            <Grid container alignItems="center" spacing={2}>
+                                                {/* Download button far right (rightmost in RTL) */}
+                                                <Grid item sx={{ width: '20%', display: 'flex', justifyContent: 'flex-start' }}>
+                                                    <Tooltip title="دانلود">
+                                                        <span>
+                                                            <Button
+                                                                variant="contained"
+                                                                fullWidth
+                                                                disabled={alreadyDownloaded}
+                                                                onClick={() => handleDownload(template)}
+                                                                sx={{ backgroundColor: alreadyDownloaded ? '#ccc' : undefined, color: alreadyDownloaded ? '#666' : undefined }}
+                                                            >
+                                                                {alreadyDownloaded ? 'قبلاً دانلود شده' : 'دانلود'}
+                                                            </Button>
+                                                        </span>
+                                                    </Tooltip>
+                                                </Grid>
+                                                {/* Game info center */}
+                                                <Grid item sx={{ width: '60%' }}>
+                                                    <ListItemText
+                                                        primary={<span style={{ fontWeight: 'bold' }}>{template.template_name}</span>}
+                                                        secondary={template.description || 'بدون توضیح'}
+                                                        sx={{ textAlign: 'right' }}
+                                                    />
+                                                </Grid>
+                                                {/* Delete button far left (leftmost in RTL) */}
+                                                <Grid item sx={{ width: '20%', display: 'flex', justifyContent: 'flex-end' }}>
                                                     <Tooltip title="حذف از دانلودهای من">
                                                         <span>
                                                             <IconButton
@@ -129,31 +159,12 @@ export default function GameRepository() {
                                                                 disabled={!alreadyDownloaded}
                                                                 onClick={() => handleUninstall(template)}
                                                                 aria-label="حذف از دانلودهای من"
+                                                                sx={{ p: 0 }}
                                                             >
-                                                                <DeleteIcon sx={{ color: '#e53935' }} />
+                                                                <DeleteIcon sx={{ color: '#e53935', fontSize: 24 }} />
                                                             </IconButton>
                                                         </span>
                                                     </Tooltip>
-                                                </Grid>
-                                                {/* Game info center */}
-                                                <Grid item sx={{ width: '65%' }}>
-                                                    <ListItemText
-                                                        primary={template.template_name}
-                                                        secondary={template.description || 'بدون توضیح'}
-                                                        sx={{ textAlign: 'right' }}
-                                                    />
-                                                </Grid>
-                                                {/* Download button far right visually (last in row-reverse) */}
-                                                <Grid item sx={{ width: '25%', display: 'flex', justifyContent: 'flex-start' }}>
-                                                    <Button
-                                                        variant="contained"
-                                                        fullWidth
-                                                        disabled={alreadyDownloaded}
-                                                        onClick={() => handleDownload(template)}
-                                                        sx={{ backgroundColor: alreadyDownloaded ? '#ccc' : undefined, color: alreadyDownloaded ? '#666' : undefined }}
-                                                    >
-                                                        {alreadyDownloaded ? 'قبلاً دانلود شده' : 'دانلود'}
-                                                    </Button>
                                                 </Grid>
                                             </Grid>
                                         </ListItem>
