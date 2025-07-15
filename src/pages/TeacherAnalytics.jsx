@@ -47,23 +47,13 @@ export default function TeacherAnalytics({ title = '📊 داشبورد تحلی
             return
         }
         const studentIds = students.map(s => s.id)
-        // Fetch all game results for these students
+        // Fetch all game results for these students from the view
         const { data: gameData } = await supabase
-            .from('student_game_status')
-            .select('student_id, game_id, score, completed_at, game_name')
+            .from('game_results_with_names')
+            .select('student_id, game_id, score, completed_at, display_game_name, student_name, teacher_name')
             .in('student_id', studentIds)
             .order('completed_at', { ascending: false })
-        // Join with student info
-        const resultsWithNames = (gameData || []).map(r => {
-            const student = students.find(s => s.id === r.student_id)
-            return {
-                ...r,
-                student_name: student?.name || student?.username || '---',
-                username: student?.username || '---',
-                full_name: student?.name || student?.username || '---',
-            }
-        })
-        setGameResults(resultsWithNames)
+        setGameResults(gameData || [])
         setLoading(false)
     }
 
@@ -211,7 +201,7 @@ export default function TeacherAnalytics({ title = '📊 داشبورد تحلی
                                         gameResults.map((r, idx) => (
                                             <TableRow key={idx}>
                                                 <TableCell align="center" sx={{ fontSize: 18 }}>{r.student_name}</TableCell>
-                                                <TableCell align="center" sx={{ fontSize: 18 }}>{r.game_name || '---'}</TableCell>
+                                                <TableCell align="center" sx={{ fontSize: 18 }}>{r.display_game_name || '---'}</TableCell>
                                                 <TableCell align="center" sx={{ fontSize: 18 }}>{r.score ?? '-'}</TableCell>
                                                 <TableCell align="center" sx={{ fontSize: 18 }}>{r.completed_at ? new Date(r.completed_at).toLocaleDateString('fa-IR') : '-'}</TableCell>
                                             </TableRow>

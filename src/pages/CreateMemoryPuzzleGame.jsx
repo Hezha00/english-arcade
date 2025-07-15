@@ -10,6 +10,7 @@ export default function CreateMemoryPuzzleGame() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [wordPairs, setWordPairs] = useState([{ english: '', persian: '' }])
+  const [timeLimit, setTimeLimit] = useState(180) // seconds
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -41,7 +42,6 @@ export default function CreateMemoryPuzzleGame() {
 
   const handleSubmit = async () => {
     if (!validate()) return;
-    // setError(''); // No longer needed here as validate() clears it on success
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -51,7 +51,7 @@ export default function CreateMemoryPuzzleGame() {
         version: '1.0',
         created_at: new Date().toISOString(),
         items: wordPairs.map(({ english, persian }, i) => ({ id: i + 1, word: english.trim(), match: persian.trim() })),
-        settings: { gridSize: 4, timeLimit: 180, maxRetries: 20 }
+        settings: { gridSize: 4, timeLimit: timeLimit, maxRetries: 20 }
       }
       const { data, error: insertError } = await supabase.from('games').insert({
         name: name.trim(),
@@ -60,7 +60,7 @@ export default function CreateMemoryPuzzleGame() {
         file_url: null,
         is_global: false,
         created_at: new Date().toISOString(),
-        duration_min: 3,
+        duration_min: Math.ceil(timeLimit / 60),
         max_retries: 20,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         game_content: gameContent,
@@ -84,6 +84,20 @@ export default function CreateMemoryPuzzleGame() {
         {success && <Alert severity="success" sx={{ mb: 2 }}>بازی با موفقیت ساخته شد!</Alert>}
         <TextField label="نام بازی" fullWidth value={name} onChange={e => setName(e.target.value)} sx={{ mb: 2, input: { color: '#fff' }, label: { color: '#ccc' } }} />
         <TextField label="توضیحات (اختیاری)" fullWidth value={description} onChange={e => setDescription(e.target.value)} sx={{ mb: 2, input: { color: '#fff' }, label: { color: '#ccc' } }} />
+        {/* Time limit selector */}
+        <Box sx={{ mb: 2 }}>
+          <Typography fontWeight="bold" sx={{ mb: 1 }}>محدودیت زمانی (ثانیه):</Typography>
+          <TextField
+            type="number"
+            inputProps={{ min: 30, max: 900, step: 10 }}
+            value={timeLimit}
+            onChange={e => setTimeLimit(Math.max(30, Math.min(900, Number(e.target.value))))}
+            sx={{ width: 120, bgcolor: '#fff', borderRadius: 2 }}
+          />
+          <Typography variant="caption" sx={{ ml: 2, color: '#ccc' }}>
+            (بین ۳۰ تا ۹۰۰ ثانیه)
+          </Typography>
+        </Box>
         <Typography variant="subtitle1" sx={{ mb: 2 }}>جفت‌های کلمه <Chip label={`${wordPairs.length} / 8`} size="small" color="primary" variant="outlined" /></Typography>
         {wordPairs.map((pair, i) => (
           <Box key={i} sx={{ display: 'flex', gap: 2, alignItems: 'center', mb: 2 }}>

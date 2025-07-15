@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import EmojiObjectsIcon from '@mui/icons-material/EmojiObjects';
 import LoginIcon from '@mui/icons-material/Login';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 export default function SelfLearnerAuthChoice() {
   const navigate = useNavigate();
@@ -16,7 +17,8 @@ export default function SelfLearnerAuthChoice() {
         justifyContent: 'center',
         px: 2,
         background: 'none',
-        color: '#fff'
+        color: '#fff',
+        flexDirection: 'column',
       }}
     >
       <Paper
@@ -30,9 +32,33 @@ export default function SelfLearnerAuthChoice() {
           bgcolor: 'rgba(255,255,255,0.15)',
           backdropFilter: 'blur(8px)',
           textAlign: 'center',
-          color: '#fff'
+          color: '#fff',
+          position: 'relative',
         }}
       >
+        {/* Back button in top left of Paper */}
+        <Button
+          onClick={() => navigate(-1)}
+          sx={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            minWidth: 0,
+            width: 40,
+            height: 40,
+            borderRadius: '50%',
+            bgcolor: 'rgba(99,102,241,0.18)',
+            color: '#fff',
+            boxShadow: 2,
+            backdropFilter: 'blur(4px)',
+            zIndex: 2,
+            '&:hover': {
+              bgcolor: 'rgba(99,102,241,0.32)',
+            },
+          }}
+        >
+          <ArrowBackIcon />
+        </Button>
         <Typography variant="h5" fontWeight="bold" sx={{ mb: 3 }}>
           🧑‍💻 ورود یا ثبت‌نام دانش‌آموز مستقل
         </Typography>

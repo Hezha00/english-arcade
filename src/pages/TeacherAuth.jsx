@@ -10,6 +10,7 @@ import {
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 export default function TeacherAuth() {
     const [email, setEmail] = useState('')
@@ -102,7 +103,8 @@ export default function TeacherAuth() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: 'none', // Gradient handled globally
-                color: '#fff'
+                color: '#fff',
+                flexDirection: 'column',
             }}
         >
             <Paper
@@ -114,9 +116,33 @@ export default function TeacherAuth() {
                     borderRadius: 4,
                     bgcolor: 'rgba(255,255,255,0.15)',
                     backdropFilter: 'blur(8px)',
-                    color: '#fff'
+                    color: '#fff',
+                    position: 'relative',
                 }}
             >
+                {/* Back button in top left of Paper */}
+                <Button
+                    onClick={() => navigate(-1)}
+                    sx={{
+                        position: 'absolute',
+                        top: 16,
+                        left: 16,
+                        minWidth: 0,
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(99,102,241,0.18)',
+                        color: '#fff',
+                        boxShadow: 2,
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 2,
+                        '&:hover': {
+                            bgcolor: 'rgba(99,102,241,0.32)',
+                        },
+                    }}
+                >
+                    <ArrowBackIcon />
+                </Button>
                 <Typography variant="h5" fontWeight="bold" gutterBottom>
                     👨‍🏫 ورود معلم
                 </Typography>

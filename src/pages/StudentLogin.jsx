@@ -16,6 +16,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TelegramIcon from '@mui/icons-material/Telegram';
 import PhoneIcon from '@mui/icons-material/Phone';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 export default function StudentLogin() {
     const [username, setUsername] = useState('')
@@ -74,7 +75,8 @@ export default function StudentLogin() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: 'none', // Background handled globally
-                color: '#fff'
+                color: '#fff',
+                flexDirection: 'column',
             }}
         >
             <Paper
@@ -88,9 +90,33 @@ export default function StudentLogin() {
                     bgcolor: 'rgba(255, 255, 255, 0.15)',
                     backdropFilter: 'blur(8px)',
                     textAlign: 'center',
-                    color: '#fff'
+                    color: '#fff',
+                    position: 'relative',
                 }}
             >
+                {/* Back button in top left of Paper */}
+                <Button
+                    onClick={() => navigate(-1)}
+                    sx={{
+                        position: 'absolute',
+                        top: 16,
+                        left: 16,
+                        minWidth: 0,
+                        width: 40,
+                        height: 40,
+                        borderRadius: '50%',
+                        bgcolor: 'rgba(99,102,241,0.18)',
+                        color: '#fff',
+                        boxShadow: 2,
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 2,
+                        '&:hover': {
+                            bgcolor: 'rgba(99,102,241,0.32)',
+                        },
+                    }}
+                >
+                    <ArrowBackIcon />
+                </Button>
                 <Typography variant="h5" fontWeight="bold" sx={{ mb: 2 }}>
                     🎓 ورود دانش‌آموز
                 </Typography>

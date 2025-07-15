@@ -15,8 +15,8 @@ export default function TopScorers() {
     useEffect(() => {
         const fetchTopScores = async () => {
             const { data, error } = await supabase
-                .from('student_game_status')
-                .select('score, completed_at, student_id, students(name)')
+                .from('game_results_with_names')
+                .select('score, completed_at, student_name, display_game_name')
                 .order('score', { ascending: false })
                 .limit(20)
 
@@ -46,8 +46,11 @@ export default function TopScorers() {
                                 <React.Fragment key={i}>
                                     <ListItem>
                                         <ListItemText
-                                            primary={s.students?.name || s.student_id}
-                                            secondary={`📅 ${moment(s.completed_at).format('jYYYY/jMM/jDD')}`}
+                                            primary={s.student_name || s.student_id}
+                                            secondary={<>
+                                                <span style={{ color: '#666', fontSize: 14 }}>{`📅 ${moment(s.completed_at).format('jYYYY/jMM/jDD')}`}</span>
+                                                <span style={{ color: '#888', fontSize: 13, display: 'block', marginTop: 2 }}>{s.display_game_name || ''}</span>
+                                            </>}
                                         />
                                         <Chip label={`${s.score}%`} color={s.score >= 80 ? 'success' : s.score >= 50 ? 'warning' : 'error'} />
                                     </ListItem>

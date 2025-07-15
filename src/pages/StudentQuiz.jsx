@@ -46,21 +46,31 @@ export default function StudentQuiz() {
                 setLoading(false)
                 return
             }
-            // Remove all code branches and logic for 'sentence-structure' game type
-            if (!game.file_url) {
-                setError('آدرس فایل بازی موجود نیست.')
-                setLoading(false)
+            // If this is a memory-puzzle game, redirect to the dedicated route
+            if (game.game_content && game.game_content.type === 'memory-puzzle') {
+                navigate(`/memory-puzzle-game/${gameId}`)
                 return
             }
-            try {
-                const res = await fetch(game.file_url)
-                const json = await res.json()
-                if (!json.word_pairs) throw new Error('فرمت فایل بازی نامعتبر است.')
-                setGameData({ name: game.name, wordPairs: json.word_pairs })
-                setAnswers(Array(json.word_pairs.length).fill(''))
+            // Try file_url first, fallback to game_content
+            if (game.file_url) {
+                try {
+                    const res = await fetch(game.file_url)
+                    const json = await res.json()
+                    if (!json.word_pairs) throw new Error('فرمت فایل بازی نامعتبر است.')
+                    setGameData({ name: game.name, wordPairs: json.word_pairs })
+                    setAnswers(Array(json.word_pairs.length).fill(''))
+                    setMaxAttempts(game.max_retries || 3)
+                } catch (err) {
+                    setError('خطا در بارگذاری فایل بازی یا فرمت نامعتبر است.')
+                }
+            } else if (game.game_content && (game.game_content.word_pairs || game.game_content.items)) {
+                // Support both word_pairs and items (for memory-puzzle)
+                const pairs = game.game_content.word_pairs || game.game_content.items || []
+                setGameData({ name: game.name, wordPairs: pairs })
+                setAnswers(Array(pairs.length).fill(''))
                 setMaxAttempts(game.max_retries || 3)
-            } catch (err) {
-                setError('خطا در بارگذاری فایل بازی یا فرمت نامعتبر است.')
+            } else {
+                setError('آدرس فایل بازی موجود نیست و داده‌ای برای بازی یافت نشد.')
             }
             setLoading(false)
         }

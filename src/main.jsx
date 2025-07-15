@@ -133,6 +133,10 @@ root.render(
         element={<MemoryPuzzleGame />}
       />
       <Route
+        path="/memory-puzzle-game/:gameId"
+        element={<MemoryPuzzleGame />}
+      />
+      <Route
         path="/emoji-word-matching/:gameId"
         element={
           <StudentAppWrapper student={student}>

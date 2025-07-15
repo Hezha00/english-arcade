@@ -40,11 +40,11 @@ export default function StudentGames() {
             setGames(data || [])
             setLoading(false)
 
-            // Fetch play counts for each game
+            // Fetch play counts for each game using the new view
             if (data && data.length > 0) {
                 const gameIds = data.map(g => g.game_id)
                 const { data: statusData } = await supabase
-                    .from('student_game_status')
+                    .from('game_results_with_names')
                     .select('game_id, student_id')
                     .eq('student_id', student.id)
                     .in('game_id', gameIds)
