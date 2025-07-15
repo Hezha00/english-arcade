@@ -89,7 +89,7 @@ export default function TeacherAuth() {
             (teacherProfile.role && teacherProfile.role.toLowerCase() === 'admin') ||
             email.toLowerCase() === 'master@admin.com'
 
-        navigate(isAdmin ? '/admin-dashboard' : '/dashboard')
+        navigate(isAdmin ? '/admin-dashboard' : '/teacher-dashboard')
         setIsLoading(false)
     }
 

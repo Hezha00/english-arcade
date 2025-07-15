@@ -56,57 +56,56 @@ export default function TeacherAssignmentsDashboard() {
 
     return (
         <Container dir="rtl" sx={{ mt: 6 }}>
-            <Typography variant="h5" gutterBottom fontWeight="bold">
-                🎓 خوش آمدید، {teacher?.username || 'معلم عزیز'}
-            </Typography>
-
-            {subscriptionDate && (
-                <Typography sx={{ mb: 2 }}>
-                    🗓 اشتراک فعال تا <strong>{subscriptionDate}</strong>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                <Typography variant="h5" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>
+                    🎓 خوش آمدید، {teacher?.username || 'معلم عزیز'}
                 </Typography>
-            )}
-
-            <Paper sx={{ p: 3, mb: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h6">📘 تمرین‌های فعال</Typography>
-                    <Button variant="contained" onClick={() => navigate('/create-assignment')}>
-                        + تمرین جدید
-                    </Button>
-                </Box>
-
-                {assignments.length === 0 ? (
-                    <Typography>فعلاً تمرینی ایجاد نشده است.</Typography>
-                ) : (
-                    <List>
-                        {assignments.map(a => (
-                            <ListItem
-                                key={a.id}
-                                secondaryAction={
-                                    <Button
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => navigate(`/add-questions?id=${a.id}`)}
-                                    >
-                                        ویرایش
-                                    </Button>
-                                }
-                            >
-                                <ListItemText
-                                    primary={a.title}
-                                    secondary={`کلاس: ${a.classroom} | مهلت: ${new Date(a.due_date).toLocaleDateString('fa-IR')}`}
-                                />
-                            </ListItem>
-                        ))}
-                    </List>
+                {subscriptionDate && (
+                    <Typography sx={{ mb: 2 }}>
+                        🗓 اشتراک فعال تا <strong>{subscriptionDate}</strong>
+                    </Typography>
                 )}
-            </Paper>
+                <Paper sx={{ p: 3, mb: 4, maxWidth: 800, width: '100%' }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography variant="h6">📘 تمرین‌های فعال</Typography>
+                        <Button variant="contained" onClick={() => navigate('/create-assignment')}>
+                            + تمرین جدید
+                        </Button>
+                    </Box>
 
-            <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" gutterBottom>
-                    🎮 بازی‌های فعال
-                </Typography>
-                <Typography color="text.secondary">بخش بازی‌ها به زودی اضافه خواهد شد.</Typography>
-            </Paper>
+                    {assignments.length === 0 ? (
+                        <Typography>فعلاً تمرینی ایجاد نشده است.</Typography>
+                    ) : (
+                        <List>
+                            {assignments.map(a => (
+                                <ListItem
+                                    key={a.id}
+                                    secondaryAction={
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => navigate(`/add-questions?id=${a.id}`)}
+                                        >
+                                            ویرایش
+                                        </Button>
+                                    }
+                                >
+                                    <ListItemText
+                                        primary={a.title}
+                                        secondary={`کلاس: ${a.classroom} | مهلت: ${new Date(a.due_date).toLocaleDateString('fa-IR')}`}
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    )}
+                </Paper>
+                <Paper sx={{ p: 3, maxWidth: 800, width: '100%' }}>
+                    <Typography variant="h6" gutterBottom>
+                        🎮 بازی‌های فعال
+                    </Typography>
+                    <Typography color="text.secondary">بخش بازی‌ها به زودی اضافه خواهد شد.</Typography>
+                </Paper>
+            </Box>
         </Container>
     )
 }

@@ -80,7 +80,7 @@ export default function StudentAppWrapper({ student, children }) {
                         {menuItems.map((item, i) => (
                             <ListItem
                                 key={i}
-                                button
+                                button={true}
                                 onClick={() => navigate(item.path)}
                                 sx={{
                                     mb: 1,

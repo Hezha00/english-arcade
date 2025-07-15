@@ -6,6 +6,13 @@ import {
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 
+// Utility to normalize any score to be out of 20
+function normalizeScore(score, maxScore) {
+    if (maxScore === 20) return score;
+    if (!maxScore || maxScore === 0) return 0;
+    return Math.round((score / maxScore) * 20);
+}
+
 export default function StudentQuiz() {
     const { gameId } = useParams()
     const [student, setStudent] = useState(null)
@@ -17,6 +24,7 @@ export default function StudentQuiz() {
     const [error, setError] = useState('')
     const navigate = useNavigate()
     const [maxAttempts, setMaxAttempts] = useState(3)
+    const [attempts, setAttempts] = useState(0)
 
     useEffect(() => {
         const saved = localStorage.getItem('student')
@@ -38,14 +46,7 @@ export default function StudentQuiz() {
                 setLoading(false)
                 return
             }
-            // Prefer game_content if available
-            if (game.game_content && game.game_content.items) {
-                setGameData({ name: game.name, wordPairs: game.game_content.items })
-                setAnswers(Array(game.game_content.items.length).fill(''))
-                setMaxAttempts(game.max_retries || 3)
-                setLoading(false)
-                return
-            }
+            // Remove all code branches and logic for 'sentence-structure' game type
             if (!game.file_url) {
                 setError('آدرس فایل بازی موجود نیست.')
                 setLoading(false)
@@ -76,15 +77,19 @@ export default function StudentQuiz() {
     const getPersian = (pair) => pair.persian || pair.match || ''
 
     const handleSubmit = async () => {
-        let correct = 0
+        let newAttempts = attempts + 1;
+        setAttempts(newAttempts);
+        let correct = 0;
         gameData.wordPairs.forEach((pair, i) => {
             if (answers[i].trim().toLowerCase() === getEnglish(pair).trim().toLowerCase()) {
                 correct++
             }
         })
 
-        const percentage = Math.round((correct / gameData.wordPairs.length) * 100)
-        setScore(percentage)
+        const rawScore = correct;
+        const maxScore = gameData.wordPairs.length;
+        const normalizedScore = normalizeScore(rawScore, maxScore);
+        setScore(normalizedScore);
         setSubmitted(true)
 
         // Ensure teacher_id is present
@@ -99,16 +104,36 @@ export default function StudentQuiz() {
             teacherId = studentRow?.teacher_id || null
         }
 
-        await supabase.from('results').insert({
+        // Upsert into results (if you want only one result per student/game)
+        await supabase.from('results').upsert({
             student_id: student.id,
             username: student.username,
             classroom: student.classroom,
             teacher_id: teacherId,
-            score: percentage,
-            total: gameData.wordPairs.length,
+            score: normalizedScore,
+            total: 20,
             submitted_at: new Date().toISOString(),
             assignment_id: gameId // or the correct assignment id
-        })
+        }, { onConflict: ['student_id', 'assignment_id'] })
+
+        // Upsert into student_game_status
+        // First, get the current attempts (if any)
+        const { data: existingStatus } = await supabase
+            .from('student_game_status')
+            .select('attempts')
+            .eq('student_id', student.id)
+            .eq('game_id', gameId)
+            .single()
+        const prevAttempts = existingStatus?.attempts || 0;
+        await supabase.from('student_game_status').upsert({
+            student_id: student.id,
+            game_id: gameId,
+            game_name: gameData.name,
+            score: normalizedScore,
+            completed_at: new Date().toISOString(),
+            attempts: prevAttempts + 1,
+            time_spent: 0 // set to 0 or calculate if you have timing logic
+        }, { onConflict: ['student_id', 'game_id'] })
     }
 
     if (!student || loading) return <CircularProgress sx={{ mt: 10 }} />
@@ -127,10 +152,10 @@ export default function StudentQuiz() {
                     {submitted ? (
                         <>
                             <Alert severity="success" sx={{ mb: 2 }}>
-                                ✅ بازی با موفقیت ثبت شد | نمره شما: {score}%
+                                ✅ بازی با موفقیت ثبت شد | نمره شما: {score} از 20
                             </Alert>
                             <Alert severity="info" sx={{ mt: 2 }}>
-                                نمره شما: {score}% | تلاش‌های استفاده‌شده: {attempts} | تلاش‌های باقی‌مانده: {maxAttempts - attempts}
+                                نمره شما: {score} از 20 | تلاش‌های استفاده‌شده: {attempts} | تلاش‌های باقی‌مانده: {maxAttempts - attempts}
                             </Alert>
                         </>
                     ) : (

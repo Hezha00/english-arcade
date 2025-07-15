@@ -16,7 +16,8 @@ import {
     Tooltip,
     Alert,
     Paper,
-    Container
+    Container,
+    ListItemButton
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import { supabase } from '../supabaseClient'
@@ -156,19 +157,12 @@ export default function Classrooms() {
     }
 
     return (
-        <Container dir="rtl" sx={{ py: 4 }}>
-            <Box
-                dir="rtl"
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    transform: 'translateX(250px)',
-                    mt: -5
-                }}
-            >
+        <Container dir="rtl" sx={{ mt: 6 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h5" fontWeight="bold">🏫 کلاس‌های من</Typography>
+                    <Typography variant="h5" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>
+                        🏫 کلاس‌های من
+                    </Typography>
                     <Tooltip title="ایجاد کلاس جدید">
                         <IconButton color="primary" onClick={() => setOpen(true)}>
                             <AddIcon />
@@ -194,21 +188,18 @@ export default function Classrooms() {
                             هیچ کلاسی پیدا نشد.
                         </Typography>
                     ) : (
-                        <List>
+                        <List sx={{ maxWidth: 800, width: '100%' }}>
                             {classes.map(({ classroom, school, count }) => (
                                 <React.Fragment key={classroom + school}>
-                                    <ListItem
-                                        button
-                                        onClick={() =>
-                                            navigate(`/classrooms/${encodeURIComponent(classroom)}`)
-                                        }
-                                    >
+                                    <ListItemButton onClick={() =>
+                                        navigate(`/classrooms/${encodeURIComponent(classroom)}`)
+                                    }>
                                         <ListItemText
                                             primary={`کلاس: ${classroom}`}
                                             secondary={`مدرسه: ${school} — تعداد دانش‌آموز: ${count}`}
                                             sx={{ textAlign: 'right' }}
                                         />
-                                    </ListItem>
+                                    </ListItemButton>
                                     <Divider />
                                 </React.Fragment>
                             ))}

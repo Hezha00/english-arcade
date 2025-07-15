@@ -22,13 +22,13 @@ import StudentQuiz from './pages/StudentQuiz'
 import StudentResultsHistory from './pages/StudentResultsHistory'
 import StudentGames from './pages/StudentGames'
 import MemoryPuzzleGame from './pages/MemoryPuzzleGame'
-import SentenceStructureGame from './pages/SentenceStructureGame'
 import IndependentLearning from './pages/IndependentLearning';
 import IndependentTest from './pages/IndependentTest';
 import SelfLearnerLogin from './pages/SelfLearnerLogin';
 import SelfLearnerSubscription from './pages/SelfLearnerSubscription';
 import SelfLearnerAuthChoice from './pages/SelfLearnerAuthChoice';
 import SelfLearnerSignup from './pages/SelfLearnerSignup';
+import EmojiWordMatchingGame from './pages/EmojiWordMatchingGame';
 
 // Teacher pages
 import TeacherAuth from './pages/TeacherAuth'
@@ -57,9 +57,8 @@ import TeacherDashboard from './pages/TeacherDashboard'
 import CreateGame from './pages/CreateGame'
 import GameStore from './pages/GameStore'
 import GameDetails from './pages/GameDetails'
-import CreateWordMatchingGame from './pages/CreateWordMatchingGame'
 import CreateMemoryPuzzleGame from './pages/CreateMemoryPuzzleGame'
-import CreateSentenceStructureGame from './pages/CreateSentenceStructureGame'
+import EditGame from './pages/EditGame'
 
 import './index.css'
 
@@ -134,8 +133,12 @@ root.render(
         element={<MemoryPuzzleGame />}
       />
       <Route
-        path="/sentence-structure/:gameId"
-        element={<SentenceStructureGame />}
+        path="/emoji-word-matching/:gameId"
+        element={
+          <StudentAppWrapper student={student}>
+            <EmojiWordMatchingGame />
+          </StudentAppWrapper>
+        }
       />
 
       {/* 🧑‍🏫 Teacher Public Auth */}
@@ -336,7 +339,7 @@ root.render(
         }
       />
       <Route
-        path="/teacher-game/:gameId/details"
+        path="/game-details/:gameId"
         element={
           <SessionGuard>
             <TeacherLayout>
@@ -346,11 +349,11 @@ root.render(
         }
       />
       <Route
-        path="/create-word-matching"
+        path="/edit-game/:gameId"
         element={
           <SessionGuard>
             <TeacherLayout>
-              <CreateWordMatchingGame />
+              <EditGame />
             </TeacherLayout>
           </SessionGuard>
         }
@@ -361,16 +364,6 @@ root.render(
           <SessionGuard>
             <TeacherLayout>
               <CreateMemoryPuzzleGame />
-            </TeacherLayout>
-          </SessionGuard>
-        }
-      />
-      <Route
-        path="/create-sentence-structure"
-        element={
-          <SessionGuard>
-            <TeacherLayout>
-              <CreateSentenceStructureGame />
             </TeacherLayout>
           </SessionGuard>
         }

@@ -39,77 +39,81 @@ export default function TeacherDashboard() {
 
     return (
         <Container dir="rtl" sx={{ py: 4, mt: { xs: 8, md: 4 } }}>
-            <Box
-                dir="rtl"
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    transform: 'translateX(250px)',
-                    mt: -5,
-                    bgcolor: 'rgba(255,255,255,0.15)',
-                    backdropFilter: 'blur(8px)',
-                    borderRadius: 3,
-                }}
-            >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h4" fontWeight="bold" color="#fff">
-                        خوش آمدید، {teacher?.username}
-                    </Typography>
-                </Box>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                <Box
+                    dir="rtl"
+                    sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        width: '100%',
+                        bgcolor: 'rgba(255,255,255,0.15)',
+                        backdropFilter: 'blur(8px)',
+                        borderRadius: 3,
+                        maxWidth: 800,
+                        mx: 'auto',
+                        p: 4,
+                    }}
+                >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, width: '100%' }}>
+                        <Typography variant="h4" fontWeight="bold" color="#fff">
+                            خوش آمدید، {teacher?.username}
+                        </Typography>
+                    </Box>
 
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, width: '100%' }}>
-                    <Paper
-                        sx={{
-                            p: 3,
-                            borderRadius: 4,
-                            bgcolor: 'rgba(255,255,255,0.15)',
-                            backdropFilter: 'blur(8px)',
-                            color: '#fff',
-                            flex: 1,
-                            minWidth: 280
-                        }}
-                    >
-                        <Typography variant="h6" fontWeight="bold">
-                            🎮 ساخت بازی جدید
-                        </Typography>
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                            بازی‌های آموزشی بسازید و به کلاس‌ها اختصاص دهید.
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            sx={{ mt: 2 }}
-                            onClick={() => navigate('/create-game')}
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3, width: '100%' }}>
+                        <Paper
+                            sx={{
+                                p: 3,
+                                borderRadius: 4,
+                                bgcolor: 'rgba(255,255,255,0.15)',
+                                backdropFilter: 'blur(8px)',
+                                color: '#fff',
+                                flex: 1,
+                                minWidth: 280
+                            }}
                         >
-                            ساخت بازی
-                        </Button>
-                    </Paper>
+                            <Typography variant="h6" fontWeight="bold">
+                                🎮 ساخت بازی جدید
+                            </Typography>
+                            <Typography variant="body2" sx={{ mt: 1 }}>
+                                بازی‌های آموزشی بسازید و به کلاس‌ها اختصاص دهید.
+                            </Typography>
+                            <Button
+                                variant="contained"
+                                sx={{ mt: 2 }}
+                                onClick={() => navigate('/create-game')}
+                            >
+                                ساخت بازی
+                            </Button>
+                        </Paper>
 
-                    <Paper
-                        sx={{
-                            p: 3,
-                            borderRadius: 4,
-                            bgcolor: 'rgba(255,255,255,0.15)',
-                            backdropFilter: 'blur(8px)',
-                            color: '#fff',
-                            flex: 1,
-                            minWidth: 280
-                        }}
-                    >
-                        <Typography variant="h6" fontWeight="bold">
-                            📊 مشاهده نتایج
-                        </Typography>
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                            عملکرد دانش‌آموزان را بررسی کنید.
-                        </Typography>
-                        <Button
-                            variant="outlined"
-                            sx={{ mt: 2 }}
-                            onClick={() => navigate('/teacher-analytics')}
+                        <Paper
+                            sx={{
+                                p: 3,
+                                borderRadius: 4,
+                                bgcolor: 'rgba(255,255,255,0.15)',
+                                backdropFilter: 'blur(8px)',
+                                color: '#fff',
+                                flex: 1,
+                                minWidth: 280
+                            }}
                         >
-                            تحلیل نتایج
-                        </Button>
-                    </Paper>
+                            <Typography variant="h6" fontWeight="bold">
+                                📊 مشاهده نتایج
+                            </Typography>
+                            <Typography variant="body2" sx={{ mt: 1 }}>
+                                عملکرد دانش‌آموزان را بررسی کنید.
+                            </Typography>
+                            <Button
+                                variant="outlined"
+                                sx={{ mt: 2 }}
+                                onClick={() => navigate('/teacher-analytics')}
+                            >
+                                تحلیل نتایج
+                            </Button>
+                        </Paper>
+                    </Box>
                 </Box>
             </Box>
         </Container>

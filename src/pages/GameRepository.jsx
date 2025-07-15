@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import {
     Container, Typography, Paper, List, ListItem, ListItemText,
-    Button, Divider, CircularProgress, Grid, Box
+    Button, Divider, CircularProgress, Grid, Box, Tooltip, IconButton
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import { downloadTemplate } from '../utils/downloadTemplate'
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function GameRepository() {
     const [templates, setTemplates] = useState([])
@@ -19,9 +20,8 @@ export default function GameRepository() {
         async function loadTemplates() {
             try {
                 const files = [
-                    '/games/word-matching.json',
                     '/games/memory-puzzle.json',
-                    '/games/sentence-structure.json'
+                    '/games/emoji-word-matching.json',
                 ]
                 const loaded = await Promise.all(files.map(async (url) => {
                     const res = await fetch(url)
@@ -75,18 +75,27 @@ export default function GameRepository() {
         }
     }
 
+    const handleUninstall = async (template) => {
+        if (!teacherId) return alert('❌ حساب کاربری یافت نشد');
+        if (!window.confirm(`آیا مطمئن هستید که می‌خواهید بازی "${template.template_name}" را حذف کنید؟`)) return;
+        try {
+            const { error } = await supabase
+                .from('downloaded_games')
+                .delete()
+                .eq('teacher_id', teacherId)
+                .eq('template_name', template.template_name);
+            if (error) throw error;
+            setDownloadedNames(downloadedNames.filter(name => name !== template.template_name));
+            alert('بازی از لیست دانلودهای شما حذف شد.');
+        } catch (err) {
+            alert('❌ خطا در حذف بازی: ' + (err.message || err));
+        }
+    };
+
     const gameTypeRegistry = {
-      'word-matching': {
-        label: 'تطبیق کلمه',
-        createPath: '/create-word-matching',
-      },
       'memory-puzzle': {
         label: 'بازی حافظه',
         createPath: '/create-memory-puzzle',
-      },
-      'sentence-structure': {
-        label: 'ساختار جمله',
-        createPath: '/create-sentence-structure',
       },
     }
 
@@ -94,30 +103,12 @@ export default function GameRepository() {
     if (error) return <Typography color="error" sx={{ mt: 10, textAlign: 'center' }}>{error}</Typography>
 
     return (
-        <Container dir="rtl" sx={{ py: 4, mt: { xs: 10, md: 1 } }}>
-            <Box
-                dir="rtl"
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    transform: 'translateX(250px)',
-                    mt: -5
-                }}
-            >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h5" fontWeight="bold">🎮 فروشگاه بازی‌ها</Typography>
-                </Box>
-
-                <Paper
-                    sx={{
-                        p: 3,
-                        borderRadius: 4,
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                        backdropFilter: 'blur(8px)',
-                        color: '#fff'
-                    }}
-                >
+        <Container dir="rtl" sx={{ py: 4 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
+                    🎮 فروشگاه بازی‌ها
+                </Typography>
+                <Paper sx={{ p: 3, borderRadius: 4, maxWidth: 800, width: '100%', mb: 4, bgcolor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: '#fff', boxShadow: 6 }}>
                     {templates.length === 0 ? (
                         <Typography color="text.secondary">📭 هیچ بازی‌ای برای نمایش وجود ندارد</Typography>
                     ) : (
@@ -127,24 +118,39 @@ export default function GameRepository() {
                                 return (
                                     <React.Fragment key={i}>
                                         <ListItem>
-                                            <Grid container alignItems="center" spacing={2}>
-                                                <Grid sx={{ width: '75%' }}>
+                                            <Grid container alignItems="center" spacing={2} direction="row-reverse">
+                                                {/* Uninstall button far left visually (first in row-reverse) */}
+                                                <Grid item sx={{ width: '10%', display: 'flex', justifyContent: 'flex-end' }}>
+                                                    
+                                                    <Tooltip title="حذف از دانلودهای من">
+                                                        <span>
+                                                            <IconButton
+                                                                color="error"
+                                                                disabled={!alreadyDownloaded}
+                                                                onClick={() => handleUninstall(template)}
+                                                                aria-label="حذف از دانلودهای من"
+                                                            >
+                                                                <DeleteIcon sx={{ color: '#e53935' }} />
+                                                            </IconButton>
+                                                        </span>
+                                                    </Tooltip>
+                                                </Grid>
+                                                {/* Game info center */}
+                                                <Grid item sx={{ width: '65%' }}>
                                                     <ListItemText
                                                         primary={template.template_name}
                                                         secondary={template.description || 'بدون توضیح'}
                                                         sx={{ textAlign: 'right' }}
                                                     />
                                                 </Grid>
-                                                <Grid sx={{ width: '25%' }}>
+                                                {/* Download button far right visually (last in row-reverse) */}
+                                                <Grid item sx={{ width: '25%', display: 'flex', justifyContent: 'flex-start' }}>
                                                     <Button
                                                         variant="contained"
                                                         fullWidth
                                                         disabled={alreadyDownloaded}
                                                         onClick={() => handleDownload(template)}
-                                                        sx={{
-                                                            backgroundColor: alreadyDownloaded ? '#ccc' : undefined,
-                                                            color: alreadyDownloaded ? '#666' : undefined
-                                                        }}
+                                                        sx={{ backgroundColor: alreadyDownloaded ? '#ccc' : undefined, color: alreadyDownloaded ? '#666' : undefined }}
                                                     >
                                                         {alreadyDownloaded ? 'قبلاً دانلود شده' : 'دانلود'}
                                                     </Button>

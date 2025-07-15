@@ -22,16 +22,13 @@ export default function StudentResultsHistory() {
     useEffect(() => {
         const fetchResults = async () => {
             if (!student?.id) return
-
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('student_game_status')
                 .select('score, completed_at, game:games(name)')
                 .eq('student_id', student.id)
                 .order('completed_at', { ascending: false })
-
             setResults(data || [])
         }
-
         fetchResults()
     }, [student])
 
@@ -43,12 +40,24 @@ export default function StudentResultsHistory() {
 
     return (
         <Box sx={{ background: 'url(/bg.png)', minHeight: '100vh', py: 8, px: 2 }}>
-            <Container dir="rtl" maxWidth="md">
-                <Typography variant="h4" fontWeight="bold" color="#fff" gutterBottom>
-                    تاریخچه بازی‌ها
-                </Typography>
-
-                <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.95)' }}>
+            <Container dir="rtl" maxWidth="md" sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: '80vh' }}>
+                <Paper sx={{
+                    p: 6,
+                    borderRadius: 4,
+                    bgcolor: 'rgba(255,255,255,0.20)',
+                    backdropFilter: 'blur(8px)',
+                    color: '#222',
+                    width: '100%',
+                    maxWidth: 600,
+                    boxShadow: 3,
+                    mt: 4,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                }}>
+                    <Typography variant="h4" fontWeight="bold" color="#222" gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
+                        تاریخچه بازی‌ها
+                    </Typography>
                     {results.length === 0 ? (
                         <Box textAlign="center" py={4}>
                             <Typography variant="h6" gutterBottom>📭 هنوز نتیجه‌ای ثبت نشده</Typography>
@@ -65,10 +74,10 @@ export default function StudentResultsHistory() {
                         </Box>
                     ) : (
                         <>
-                            <Typography variant="h6" color="#4f46e5" sx={{ mb: 2, textAlign: 'center' }}>
+                            <Typography variant="h6" color="#4f46e5" sx={{ mb: 4, textAlign: 'center' }}>
                                 میانگین امتیاز کل بازی‌ها: {avgScore}%
                             </Typography>
-                            <List>
+                            <List sx={{ width: '100%' }}>
                                 {results.slice(0, 20).map((r, index) => {
                                     const scoreColor = r.score >= 80 ? 'success' : r.score >= 50 ? 'warning' : 'error'
                                     const date = r.completed_at
@@ -77,15 +86,16 @@ export default function StudentResultsHistory() {
 
                                     return (
                                         <React.Fragment key={index}>
-                                            <ListItem>
+                                            <ListItem sx={{ py: 3, px: 2 }}>
                                                 <SportsEsportsIcon style={{ marginLeft: 8, color: '#4f46e5' }} />
                                                 <ListItemText
                                                     primary={r.game?.name || '---'}
                                                     secondary={`📅 تاریخ: ${date}`}
+                                                    sx={{ mr: 2 }}
                                                 />
                                                 <Chip label={`${r.score}%`} color={scoreColor} />
                                             </ListItem>
-                                            {index < results.length - 1 && <Divider sx={{ my: 1 }} />}
+                                            {index < results.length - 1 && <Divider sx={{ my: 2 }} />}
                                         </React.Fragment>
                                     )
                                 })}

@@ -198,31 +198,43 @@ export default function StudentDashboard() {
         <Container
             dir="rtl"
             sx={{
-                mt: 4,
-                backdropFilter: 'blur(6px)',
-                color: '#fff'
+                mt: 6,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                minHeight: '80vh',
+                color: '#fff',
+                px: { xs: 1, sm: 4, md: 8 },
+                maxWidth: '1200px',
             }}
         >
             <Typography variant="h5" gutterBottom>
                 👋 سلام، {student.name || student.username} عزیز!
             </Typography>
 
-            <Typography>🎓 مدرسه: {student.school}</Typography>
-            <Typography>📚 پایه: {student.year_level || 'ثبت نشده'}</Typography>
-            <Typography>🏫 کلاس: {student.classroom}</Typography>
+            <Typography sx={{ mb: 2 }}>🎓 مدرسه: {student.school}</Typography>
+            <Typography sx={{ mb: 2 }}>📚 پایه: {student.year_level || 'ثبت نشده'}</Typography>
+            <Typography sx={{ mb: 4 }}>🏫 کلاس: {student.classroom}</Typography>
 
-            <Grid container spacing={3} sx={{ mt: 3 }}>
-                <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+            <Grid container spacing={5} sx={{ mt: 1, justifyContent: 'center', width: '100%' }}>
+                <Grid sx={{ width: { xs: '100%', md: '33%' }, display: 'flex', justifyContent: 'center' }}>
                     <Paper
                         sx={{
-                            p: 3,
-                            borderRadius: 3,
-                            bgcolor: 'rgba(255,255,255,0.15)',
+                            p: 4,
+                            borderRadius: 4,
+                            bgcolor: 'rgba(255,255,255,0.20)',
                             backdropFilter: 'blur(8px)',
-                            color: '#fff'
+                            color: '#222',
+                            minWidth: 250,
+                            maxWidth: 350,
+                            boxShadow: 3,
+                            textAlign: 'center',
+                            mb: 2,
+                            mx: 2,
+                            my: 2,
                         }}
                     >
-                        <Typography variant="subtitle1" fontWeight="bold">
+                        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
                             🎯 امتیاز کل شما
                         </Typography>
                         <Typography variant="h6" sx={{ mt: 1 }}>
@@ -230,46 +242,58 @@ export default function StudentDashboard() {
                         </Typography>
                     </Paper>
                 </Grid>
-
-                <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+                <Grid sx={{ width: { xs: '100%', md: '33%' }, display: 'flex', justifyContent: 'center' }}>
                     <Paper
                         sx={{
-                            p: 3,
-                            borderRadius: 3,
-                            bgcolor: 'rgba(255,255,255,0.15)',
+                            p: 4,
+                            borderRadius: 4,
+                            bgcolor: 'rgba(255,255,255,0.20)',
                             backdropFilter: 'blur(8px)',
-                            color: '#fff'
+                            color: '#222',
+                            minWidth: 250,
+                            maxWidth: 350,
+                            boxShadow: 3,
+                            textAlign: 'center',
+                            mb: 2,
+                            mx: 2,
+                            my: 2,
                         }}
                     >
-                        <Typography variant="subtitle1" fontWeight="bold">
+                        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
                             📊 آزمون‌ها و نتایج
                         </Typography>
                         <Button
                             variant="outlined"
-                            sx={{ mt: 1, color: '#fff', borderColor: '#fff' }}
+                            sx={{ mt: 1, color: '#4f46e5', borderColor: '#4f46e5' }}
                             onClick={() => navigate('/student-results')}
                         >
                             مشاهده نتایج من
                         </Button>
                     </Paper>
                 </Grid>
-
-                <Grid sx={{ width: { xs: '100%', md: '50%' } }}>
+                <Grid sx={{ width: { xs: '100%', md: '33%' }, display: 'flex', justifyContent: 'center' }}>
                     <Paper
                         sx={{
-                            p: 3,
-                            borderRadius: 3,
-                            bgcolor: 'rgba(255,255,255,0.15)',
+                            p: 4,
+                            borderRadius: 4,
+                            bgcolor: 'rgba(255,255,255,0.20)',
                             backdropFilter: 'blur(8px)',
-                            color: '#fff'
+                            color: '#222',
+                            minWidth: 250,
+                            maxWidth: 350,
+                            boxShadow: 3,
+                            textAlign: 'center',
+                            mb: 2,
+                            mx: 2,
+                            my: 2,
                         }}
                     >
-                        <Typography variant="subtitle1" fontWeight="bold">
+                        <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 2 }}>
                             🎮 بازی‌های آموزشی
                         </Typography>
                         <Button
                             variant="outlined"
-                            sx={{ mt: 1, color: '#fff', borderColor: '#fff' }}
+                            sx={{ mt: 1, color: '#4f46e5', borderColor: '#4f46e5' }}
                             onClick={() => navigate('/student-games')}
                         >
                             شروع بازی

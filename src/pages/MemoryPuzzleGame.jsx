@@ -12,27 +12,31 @@ function shuffle(array) {
     return arr
 }
 
+// Utility to normalize any score to be out of 20
+function normalizeScore(score, maxScore) {
+    if (maxScore === 20) return score;
+    if (!maxScore || maxScore === 0) return 0;
+    return Math.round((score / maxScore) * 20);
+}
+
 export default function MemoryPuzzleGame() {
     const { gameId } = useParams()
     const [gameData, setGameData] = useState(null)
     const [cards, setCards] = useState([])
-    const [flipped, setFlipped] = useState([])
-    const [matched, setMatched] = useState([])
-    const [attempts, setAttempts] = useState(0)
-    const [maxAttempts, setMaxAttempts] = useState(20)
-    const [timeLeft, setTimeLeft] = useState(180)
-    const [initialTimeLimit, setInitialTimeLimit] = useState(180); // For time_spent calculation
-    const [timerActive, setTimerActive] = useState(false)
+    const [flipped, setFlipped] = useState([]) // indices of currently flipped cards
+    const [matched, setMatched] = useState([]) // indices of matched cards
+    const [moves, setMoves] = useState(0)
     const [finished, setFinished] = useState(false)
     const [score, setScore] = useState(0)
     const [error, setError] = useState('')
     const [submitted, setSubmitted] = useState(false)
+    const [isResolving, setIsResolving] = useState(false) // prevent clicks while resolving
 
     useEffect(() => {
         const fetchGame = async () => {
             const { data, error } = await supabase
                 .from('games')
-                .select('game_content, name, max_retries, duration_min')
+                .select('game_content, name')
                 .eq('id', gameId)
                 .single()
             if (error || !data) {
@@ -40,11 +44,7 @@ export default function MemoryPuzzleGame() {
                 return
             }
             setGameData(data)
-            setMaxAttempts(data.max_retries || 20)
-            const initialTime = (data.duration_min || 3) * 60;
-            setTimeLeft(initialTime);
-            setInitialTimeLimit(initialTime); // Store initial time limit
-            // Prepare cards
+            // Prepare cards: 8 pairs (english/persian)
             const pairs = (data.game_content?.items || []).slice(0, 8)
             const cardList = shuffle([
                 ...pairs.map((p, i) => ({ id: i, text: p.word, type: 'en', pair: p.match })),
@@ -55,73 +55,61 @@ export default function MemoryPuzzleGame() {
         fetchGame()
     }, [gameId])
 
-    useEffect(() => {
-        if (!finished && timerActive && timeLeft > 0) {
-            const t = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
-            return () => clearTimeout(t)
-        }
-        if (timeLeft === 0 && !finished) {
-            setFinished(true)
-        }
-    }, [timerActive, timeLeft, finished])
-
-    useEffect(() => {
-        if (matched.length === 16 && !finished) {
-            setFinished(true)
-            setScore(100)
-        }
-    }, [matched, finished])
-
+    // Handle card click
     const handleFlip = idx => {
-        if (flipped.length === 2 || flipped.includes(idx) || matched.includes(idx) || finished) return
-        setFlipped([...flipped, idx])
-        if (flipped.length === 1) {
-            setAttempts(a => a + 1)
-            setTimerActive(true)
-        }
-    }
-
-    useEffect(() => {
-        if (flipped.length === 2) {
-            const [i1, i2] = flipped
+        if (isResolving || flipped.length === 2 || flipped.includes(idx) || matched.includes(idx) || finished) return
+        const newFlipped = [...flipped, idx]
+        setFlipped(newFlipped)
+        if (newFlipped.length === 2) {
+            setIsResolving(true)
+            setMoves(m => m + 1)
+            const [i1, i2] = newFlipped
             if (
                 cards[i1] &&
                 cards[i2] &&
                 ((cards[i1].type === 'en' && cards[i2].type === 'fa' && cards[i1].pair === cards[i2].text) ||
                     (cards[i1].type === 'fa' && cards[i2].type === 'en' && cards[i1].pair === cards[i2].text))
             ) {
+                // Match!
                 setTimeout(() => {
                     setMatched(m => [...m, i1, i2])
                     setFlipped([])
-                }, 800)
+                    setIsResolving(false)
+                }, 700)
             } else {
-                setTimeout(() => setFlipped([]), 1200)
+                // Not a match
+                setTimeout(() => {
+                    setFlipped([])
+                    setIsResolving(false)
+                }, 1000)
             }
         }
-    }, [flipped, cards])
+    }
 
+    // Check for game finish
     useEffect(() => {
-        if ((attempts >= maxAttempts || timeLeft === 0) && !finished) {
+        if (matched.length === 16 && !finished) {
             setFinished(true)
-            setScore(Math.round((matched.length / 16) * 100))
+            setScore(20) // always 20 for full match
         }
-    }, [attempts, maxAttempts, timeLeft, matched, finished])
+    }, [matched, finished])
+
+    // Score is out of 20, proportional to pairs found
+    const normalizedScore = finished ? 20 : Math.round((matched.length / 16) * 20)
 
     const handleSubmit = async () => {
         if (submitted) return
         setSubmitted(true)
-
         const studentInfoString = localStorage.getItem('student');
         if (!studentInfoString) {
             alert('خطا: اطلاعات دانش‌آموز یافت نشد. لطفاً دوباره وارد شوید.');
             setSubmitted(false); // Allow retry
             return;
         }
-
         let studentId;
         try {
             const studentInfo = JSON.parse(studentInfoString);
-            studentId = studentInfo?.id; // Assuming 'id' is the field for student's ID
+            studentId = studentInfo?.id;
             if (!studentId) throw new Error("Student ID not found in localStorage data.");
         } catch (parseError) {
             console.error("Error parsing student data from localStorage:", parseError);
@@ -129,29 +117,44 @@ export default function MemoryPuzzleGame() {
             setSubmitted(false);
             return;
         }
-
         try {
-            const { error } = await supabase
+            // Get current attempts (if any)
+            console.log('[MemoryPuzzleGame] Submitting result:', {
+                student_id: studentId,
+                game_id: gameId,
+                game_name: gameData.name,
+                score: normalizedScore,
+                moves,
+                completed_at: new Date().toISOString()
+            });
+            const { data: existingStatus, error: fetchError } = await supabase
                 .from('student_game_status')
-                .insert({
+                .select('attempts')
+                .eq('student_id', studentId)
+                .eq('game_id', gameId)
+                .single()
+            if (fetchError) console.error('[MemoryPuzzleGame] Error fetching existing status:', fetchError);
+            const prevAttempts = existingStatus?.attempts || 0;
+            const { error: upsertError, data: upsertData } = await supabase
+                .from('student_game_status')
+                .upsert({
                     student_id: studentId,
                     game_id: gameId,
                     game_name: gameData.name,
-                    score: score,
-                    attempts: attempts,
-                    time_spent: initialTimeLimit - timeLeft,
+                    score: normalizedScore,
+                    attempts: prevAttempts + 1,
+                    time_spent: moves, // moves as time_spent for now
                     completed_at: new Date().toISOString(),
-                })
-                .select()
-                .single()
-
-            if (error) {
-                throw error
+                }, { onConflict: ['student_id', 'game_id'] })
+            if (upsertError) {
+                console.error('[MemoryPuzzleGame] Error upserting result:', upsertError);
+                alert('خطا در ثبت بازی. لطفاً دوباره تلاش کنید.')
+            } else {
+                console.log('[MemoryPuzzleGame] Upserted result:', upsertData);
+                alert('بازی با موفقیت ثبت شد!')
             }
-            alert('بازی با موفقیت ثبت شد!')
-            // Optionally, redirect or update UI after successful submission
         } catch (err) {
-            console.error('Error submitting game:', err)
+            console.error('[MemoryPuzzleGame] JS error submitting game:', err)
             alert('خطا در ثبت بازی. لطفاً دوباره تلاش کنید.')
         }
     }
@@ -161,16 +164,16 @@ export default function MemoryPuzzleGame() {
 
     return (
         <Box sx={{ background: 'url(/bg.png)', minHeight: '100vh', py: 8, px: 2 }}>
-            <Paper sx={{ maxWidth: 600, mx: 'auto', p: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: '#fff', boxShadow: 6 }}>
-                <Typography variant="h5" fontWeight="bold" gutterBottom>
+            <Paper sx={{ maxWidth: 600, mx: 'auto', p: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(12px)', color: '#222', boxShadow: 8 }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ color: '#4f46e5' }}>
                     🧩 بازی حافظه: {gameData.name}
                 </Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>
+                <Typography variant="body1" sx={{ mb: 2, color: '#333' }}>
                     کلمات انگلیسی را با معنی فارسی آن‌ها تطبیق دهید. هر بار دو کارت را برگردانید. اگر جفت باشند، باز می‌مانند.
                 </Typography>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography>⏰ زمان: {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</Typography>
-                    <Typography>🔄 تلاش: {attempts} / {maxAttempts}</Typography>
+                    <Typography sx={{ color: '#4f46e5' }}>تعداد حرکات: {moves}</Typography>
+                    <Typography sx={{ color: '#4f46e5' }}>امتیاز فعلی: {normalizedScore} از 20</Typography>
                 </Box>
                 <Grid container spacing={2} sx={{ mb: 3 }}>
                     {cards.map((card, idx) => {
@@ -190,7 +193,7 @@ export default function MemoryPuzzleGame() {
                                         justifyContent: 'center',
                                         fontWeight: 'bold',
                                         fontSize: 18,
-                                        cursor: isFlipped || finished ? 'default' : 'pointer',
+                                        cursor: isFlipped || finished || flipped.length === 2 || isResolving ? 'default' : 'pointer',
                                         transition: 'all 0.4s cubic-bezier(.4,2,.6,1)',
                                         border: isFlipped ? '2px solid #4f46e5' : '2px solid transparent',
                                         userSelect: 'none',
@@ -208,18 +211,18 @@ export default function MemoryPuzzleGame() {
                     })}
                 </Grid>
                 {finished && (
-                    <Alert severity={score === 100 ? 'success' : 'info'} sx={{ mt: 2 }}>
-                        {score === 100 ? '🎉 عالی! همه جفت‌ها را پیدا کردید.' : `امتیاز شما: ${score} از 100`}
+                    <Alert severity={normalizedScore === 20 ? 'success' : 'info'} sx={{ mt: 2 }}>
+                        {normalizedScore === 20 ? '🎉 عالی! همه جفت‌ها را پیدا کردید.' : `امتیاز شما: ${normalizedScore} از 20`}
                     </Alert>
                 )}
                 {finished && !submitted && (
-                    <Button variant="contained" fullWidth sx={{ mt: 2 }} onClick={handleSubmit}>
+                    <Button variant="contained" fullWidth sx={{ mt: 2, background: 'linear-gradient(90deg, #6366f1, #4f46e5)', color: '#fff', fontWeight: 'bold' }} onClick={handleSubmit}>
                         ثبت و اتمام بازی
                     </Button>
                 )}
                 {submitted && (
                     <Alert severity="info" sx={{ mt: 2 }}>
-                        امتیاز شما: {score} | تلاش‌های استفاده‌شده: {attempts} | تلاش‌های باقی‌مانده: {maxAttempts - attempts}
+                        امتیاز شما: {normalizedScore} از 20 | تعداد حرکات: {moves}
                     </Alert>
                 )}
             </Paper>

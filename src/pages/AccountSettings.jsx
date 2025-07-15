@@ -45,32 +45,12 @@ export default function AccountSettings() {
     }
 
     return (
-        <Container dir="rtl" sx={{ py: 4 }}>
-            <Box
-                dir="rtl"
-                sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    transform: 'translateX(250px)',
-                    mt: -5
-                }}
-            >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h5" fontWeight="bold">⚙️ تنظیمات حساب</Typography>
-                </Box>
-
-                <Paper
-                    sx={{
-                        maxWidth: 500,
-                        width: '100%',
-                        p: 4,
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                        borderRadius: 4,
-                        backdropFilter: 'blur(8px)',
-                        color: '#fff'
-                    }}
-                >
+        <Container dir="rtl" sx={{ mt: 6 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
+                <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
+                    ⚙️ تنظیمات حساب کاربری
+                </Typography>
+                <Paper sx={{ p: 3, borderRadius: 4, maxWidth: 800, width: '100%', bgcolor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: '#fff', boxShadow: 6 }}>
                     <Typography sx={{ mt: 2 }}>
                         <strong>نام کاربری:</strong> {teacher.username}
                     </Typography>

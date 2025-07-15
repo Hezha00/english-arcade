@@ -21,6 +21,7 @@ export default function StudentGames() {
     const [games, setGames] = useState([])
     const [student, setStudent] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [playCounts, setPlayCounts] = useState({})
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -38,6 +39,22 @@ export default function StudentGames() {
             if (error) console.error(error)
             setGames(data || [])
             setLoading(false)
+
+            // Fetch play counts for each game
+            if (data && data.length > 0) {
+                const gameIds = data.map(g => g.game_id)
+                const { data: statusData } = await supabase
+                    .from('student_game_status')
+                    .select('game_id, student_id')
+                    .eq('student_id', student.id)
+                    .in('game_id', gameIds)
+                // Count plays per game
+                const counts = {}
+                statusData?.forEach(row => {
+                    counts[row.game_id] = (counts[row.game_id] || 0) + 1
+                })
+                setPlayCounts(counts)
+            }
         }
         fetchGames()
     }, [student])
@@ -50,46 +67,68 @@ export default function StudentGames() {
                 background: 'url(/bg.png)',
                 minHeight: '100vh',
                 py: 8,
-                px: 2
+                px: 2,
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
             }}
         >
-            <Container dir="rtl" maxWidth="md">
-                <Typography variant="h4" fontWeight="bold" color="#fff" gutterBottom>
-                    بازی‌های قابل انجام
-                </Typography>
-
-                <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'rgba(255,255,255,0.95)' }}>
+            <Container dir="rtl" maxWidth="md" sx={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: '80vh' }}>
+                <Paper sx={{
+                    p: 6,
+                    borderRadius: 4,
+                    bgcolor: 'rgba(255,255,255,0.20)',
+                    backdropFilter: 'blur(8px)',
+                    color: '#222',
+                    width: '100%',
+                    maxWidth: 600,
+                    boxShadow: 3,
+                    mt: 4,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                }}>
+                    <Typography variant="h4" fontWeight="bold" color="#222" gutterBottom sx={{ textAlign: 'center', mb: 3 }}>
+                        بازی‌های قابل انجام
+                    </Typography>
                     {games.length === 0 ? (
                         <Typography color="text.secondary">
                             📭 هیچ بازی‌ای برای کلاس شما اختصاص داده نشده
                         </Typography>
                     ) : (
-                        <List>
-                            {games.map((g, i) => (
-                                <React.Fragment key={i}>
-                                    <ListItem
-                                        secondaryAction={
-                                            <Button
-                                                variant="contained"
-                                                onClick={() => navigate(`/student-quiz/${g.game_id}`)}
-                                            >
-                                                شروع بازی
-                                            </Button>
-                                        }
-                                    >
-                                        <SportsEsportsIcon style={{ marginLeft: 8, color: '#4f46e5' }} />
-                                        <ListItemText
-                                            primary={g.game_name || '---'}
-                                            secondary={`کلاس: ${g.classroom} | ضرب‌العجل: ${g.expires_at
-                                                    ? moment(g.expires_at).format('jYYYY/jMM/jDD HH:mm')
-                                                    : '---'
-                                                }`}
-                                        />
-                                        <Chip label="فعال" color="success" />
-                                    </ListItem>
-                                    {i < games.length - 1 && <Divider sx={{ my: 1 }} />}
-                                </React.Fragment>
-                            ))}
+                        <List sx={{ width: '100%' }}>
+                            {games.map((g, i) => {
+                                const played = playCounts[g.game_id] || 0
+                                const maxRetries = g.max_retries || 1
+                                const canPlay = played < maxRetries
+                                return (
+                                    <React.Fragment key={i}>
+                                        <ListItem sx={{ py: 3, px: 2 }}
+                                            secondaryAction={
+                                                <Button
+                                                    variant="contained"
+                                                    onClick={() => navigate(`/student-quiz/${g.game_id}`)}
+                                                    disabled={!canPlay}
+                                                >
+                                                    {canPlay ? 'شروع بازی' : 'تعداد دفعات مجاز تمام شد'}
+                                                </Button>
+                                            }
+                                        >
+                                            <SportsEsportsIcon style={{ marginLeft: 8, color: '#4f46e5' }} />
+                                            <ListItemText
+                                                primary={g.game_name || '---'}
+                                                secondary={`کلاس: ${g.classroom} | ضرب‌العجل: ${g.expires_at
+                                                        ? moment(g.expires_at).format('jYYYY/jMM/jDD HH:mm')
+                                                        : '---'
+                                                    } | دفعات انجام‌شده: ${played} / ${maxRetries}`}
+                                                sx={{ mr: 2 }}
+                                            />
+                                            <Chip label={canPlay ? 'فعال' : 'غیرفعال'} color={canPlay ? 'success' : 'default'} />
+                                        </ListItem>
+                                        {i < games.length - 1 && <Divider sx={{ my: 2 }} />}
+                                    </React.Fragment>
+                                )
+                            })}
                         </List>
                     )}
                 </Paper>

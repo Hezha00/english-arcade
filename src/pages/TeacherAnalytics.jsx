@@ -6,7 +6,8 @@ import {
 } from '@mui/material'
 import { supabase } from '../supabaseClient'
 
-export default function TeacherAnalytics() {
+// To adjust the heading text, pass a 'title' prop to <TeacherAnalytics title="Your Custom Title" />
+export default function TeacherAnalytics({ title = '📊 داشبورد تحلیلی کلاس' }) {
     const [classrooms, setClassrooms] = useState([])
     const [selectedClass, setSelectedClass] = useState('')
     const [results, setResults] = useState([])
@@ -18,7 +19,6 @@ export default function TeacherAnalytics() {
     }, [])
 
     useEffect(() => {
-        if (selectedClass) fetchResults()
         if (selectedClass) fetchGameResults()
     }, [selectedClass])
 
@@ -32,16 +32,6 @@ export default function TeacherAnalytics() {
             .eq('teacher_id', teacherAuthId)
 
         setClassrooms(data || [])
-    }
-
-    const fetchResults = async () => {
-        setLoading(true)
-        const { data } = await supabase
-            .from('results')
-            .select('*')
-            .eq('classroom', selectedClass)
-        setResults(data || [])
-        setLoading(false)
     }
 
     const fetchGameResults = async () => {
@@ -69,6 +59,8 @@ export default function TeacherAnalytics() {
             return {
                 ...r,
                 student_name: student?.name || student?.username || '---',
+                username: student?.username || '---',
+                full_name: student?.name || student?.username || '---',
             }
         })
         setGameResults(resultsWithNames)
@@ -77,129 +69,154 @@ export default function TeacherAnalytics() {
 
     const getTopPerformers = () => {
         const grouped = {}
-
-        results.forEach((r) => {
-            if (!grouped[r.username]) grouped[r.username] = { total: 0, attempts: 0 }
-            grouped[r.username].total += r.score
-            grouped[r.username].attempts += 1
+        gameResults.forEach((r) => {
+            if (!grouped[r.student_name]) grouped[r.student_name] = { total: 0, attempts: 0 }
+            grouped[r.student_name].total += r.score
+            grouped[r.student_name].attempts += 1
         })
-
-        const leaderboard = Object.entries(grouped).map(([user, stats]) => ({
-            username: user,
+        const leaderboard = Object.entries(grouped).map(([name, stats]) => ({
+            full_name: name,
             avg: stats.total / stats.attempts
         }))
-
         return leaderboard.sort((a, b) => b.avg - a.avg).slice(0, 5)
     }
 
     const classroomAverage = () => {
-        if (!results.length) return 0
-        const total = results.reduce((sum, r) => sum + r.score, 0)
-        return (total / results.length).toFixed(2)
+        if (!gameResults.length) return 0
+        const total = gameResults.reduce((sum, r) => sum + r.score, 0)
+        return (total / gameResults.length).toFixed(2)
     }
 
     return (
-        <Container dir="rtl" sx={{ mt: { xs: 6, md: 1 } }}>
+        <Container dir="rtl" maxWidth="md" sx={{ mt: { xs: 6, md: 4 }, mb: 6 }}>
+            {/* Page title in standard teacher-side style */}
+            <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mb: 3, textAlign: 'center' }}>
+                {title}
+            </Typography>
             <Box
                 dir="rtl"
                 sx={{
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'flex-start',
-                    transform: 'translateX(250px)',
-                    mt: -2
+                    alignItems: 'center',
+                    width: '100%',
                 }}
             >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                    <Typography variant="h5" fontWeight="bold">
-                        📊 داشبورد تحلیلی کلاس
-                    </Typography>
-                </Box>
-
-                <FormControl fullWidth sx={{ my: 3 }}>
-                    <InputLabel>کلاس</InputLabel>
+                <FormControl fullWidth sx={{ my: 3, maxWidth: 400 }}>
+                    <InputLabel id="classroom-select-label" htmlFor="classroom-select">کلاس</InputLabel>
                     <Select
+                        labelId="classroom-select-label"
+                        id="classroom-select"
+                        name="classroom"
                         value={selectedClass}
                         onChange={(e) => setSelectedClass(e.target.value)}
+                        label="کلاس"
+                        sx={{ fontSize: 18 }}
                     >
                         {classrooms.map(cls => (
-                            <MenuItem key={cls.name} value={cls.name}>{cls.name}</MenuItem>
+                            <MenuItem key={cls.name} value={cls.name} sx={{ fontSize: 18 }}>{cls.name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>
-
                 {loading ? (
-                    <LinearProgress />
+                    <LinearProgress sx={{ width: '100%', my: 4 }} />
                 ) : (
                     <>
                         <Paper
                             sx={{
-                                p: 3,
+                                p: 4,
                                 mb: 4,
                                 borderRadius: 4,
-                                bgcolor: 'rgba(255,255,255,0.15)',
+                                bgcolor: 'rgba(255,255,255,0.20)',
                                 backdropFilter: 'blur(8px)',
-                                color: '#fff'
+                                color: '#222',
+                                width: '100%',
+                                maxWidth: 800,
+                                boxShadow: 3,
                             }}
                         >
-                            <Typography variant="h6">
-                                میانگین نمرات کلاس: {classroomAverage()}
+                            <Typography variant="h6" sx={{ fontSize: 22, mb: 2 }}>
+                                میانگین نمرات کلاس: <b>{classroomAverage()}</b>
                             </Typography>
+                            {gameResults.length === 0 && selectedClass && (
+                                <Typography color="text.secondary" sx={{ mt: 2, fontSize: 18 }}>
+                                    هیچ نتیجه‌ای برای این کلاس ثبت نشده است.
+                                </Typography>
+                            )}
                         </Paper>
-
                         <Paper
                             sx={{
-                                p: 3,
+                                p: 4,
+                                mb: 4,
                                 borderRadius: 4,
-                                bgcolor: 'rgba(255,255,255,0.15)',
+                                bgcolor: 'rgba(255,255,255,0.20)',
                                 backdropFilter: 'blur(8px)',
-                                color: '#fff'
+                                color: '#222',
+                                width: '100%',
+                                maxWidth: 800,
+                                boxShadow: 3,
                             }}
                         >
-                            <Typography variant="h6" gutterBottom>
+                            <Typography variant="h6" gutterBottom sx={{ fontSize: 22 }}>
                                 🔝 ۵ دانش‌آموز برتر
                             </Typography>
-                            <Table>
+                            <Table size="medium">
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell align="center">ردیف</TableCell>
-                                        <TableCell align="center">نام کاربری</TableCell>
-                                        <TableCell align="center">میانگین نمره</TableCell>
+                                        <TableCell align="center" sx={{ fontSize: 18 }}>ردیف</TableCell>
+                                        <TableCell align="center" sx={{ fontSize: 18 }}>نام دانش‌آموز</TableCell>
+                                        <TableCell align="center" sx={{ fontSize: 18 }}>میانگین نمره</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {getTopPerformers().map((s, idx) => (
-                                        <TableRow key={s.username}>
-                                            <TableCell align="center">{idx + 1}</TableCell>
-                                            <TableCell align="center">{s.username}</TableCell>
-                                            <TableCell align="center">{s.avg.toFixed(2)}</TableCell>
+                                    {getTopPerformers().length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={3} align="center" sx={{ color: 'text.secondary', fontSize: 18 }}>
+                                                هیچ دانش‌آموزی برای این کلاس ثبت نشده است.
+                                            </TableCell>
                                         </TableRow>
-                                    ))}
+                                    ) : (
+                                        getTopPerformers().map((s, idx) => (
+                                            <TableRow key={s.full_name}>
+                                                <TableCell align="center" sx={{ fontSize: 18 }}>{idx + 1}</TableCell>
+                                                <TableCell align="center" sx={{ fontSize: 18 }}>{s.full_name}</TableCell>
+                                                <TableCell align="center" sx={{ fontSize: 18 }}>{s.avg.toFixed(2)}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
                                 </TableBody>
                             </Table>
                         </Paper>
-                        <Paper sx={{ p: 3, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(8px)', color: '#fff', mt: 4 }}>
-                            <Typography variant="h6" gutterBottom>
+                        <Paper sx={{ p: 4, borderRadius: 4, bgcolor: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(8px)', color: '#222', mt: 4, width: '100%', maxWidth: 800, boxShadow: 3 }}>
+                            <Typography variant="h6" gutterBottom sx={{ fontSize: 22 }}>
                                 🎮 تاریخچه بازی‌های دانش‌آموزان این کلاس
                             </Typography>
-                            <Table>
+                            <Table size="medium">
                                 <TableHead>
                                     <TableRow>
-                                        <TableCell align="center">نام دانش‌آموز</TableCell>
-                                        <TableCell align="center">نام بازی</TableCell>
-                                        <TableCell align="center">امتیاز</TableCell>
-                                        <TableCell align="center">تاریخ</TableCell>
+                                        <TableCell align="center" sx={{ fontSize: 18 }}>نام دانش‌آموز</TableCell>
+                                        <TableCell align="center" sx={{ fontSize: 18 }}>نام بازی</TableCell>
+                                        <TableCell align="center" sx={{ fontSize: 18 }}>امتیاز</TableCell>
+                                        <TableCell align="center" sx={{ fontSize: 18 }}>تاریخ</TableCell>
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {gameResults.map((r, idx) => (
-                                        <TableRow key={idx}>
-                                            <TableCell align="center">{r.student_name}</TableCell>
-                                            <TableCell align="center">{r.game_name || '---'}</TableCell>
-                                            <TableCell align="center">{r.score ?? '-'}</TableCell>
-                                            <TableCell align="center">{r.completed_at ? new Date(r.completed_at).toLocaleDateString('fa-IR') : '-'}</TableCell>
+                                    {gameResults.length === 0 && selectedClass ? (
+                                        <TableRow>
+                                            <TableCell colSpan={4} align="center" sx={{ color: 'text.secondary', fontSize: 18 }}>
+                                                هیچ نتیجه‌ای برای این کلاس ثبت نشده است.
+                                            </TableCell>
                                         </TableRow>
-                                    ))}
+                                    ) : (
+                                        gameResults.map((r, idx) => (
+                                            <TableRow key={idx}>
+                                                <TableCell align="center" sx={{ fontSize: 18 }}>{r.student_name}</TableCell>
+                                                <TableCell align="center" sx={{ fontSize: 18 }}>{r.game_name || '---'}</TableCell>
+                                                <TableCell align="center" sx={{ fontSize: 18 }}>{r.score ?? '-'}</TableCell>
+                                                <TableCell align="center" sx={{ fontSize: 18 }}>{r.completed_at ? new Date(r.completed_at).toLocaleDateString('fa-IR') : '-'}</TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
                                 </TableBody>
                             </Table>
                         </Paper>
