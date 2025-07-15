@@ -173,6 +173,9 @@ export default function SelfLearnerSignup() {
             >
               {loading ? <CircularProgress size={24} color="inherit" /> : 'ادامه'}
             </Button>
+            <Typography variant="body2" sx={{ mt: 3, color: '#ccc' }}>
+              اگر حساب کاربری ندارید، <Button variant="text" sx={{ color: '#4ade80', fontWeight: 'bold' }} onClick={() => navigate('/self-learner-subscription')}>خرید اشتراک</Button> را بزنید.
+            </Typography>
           </form>
         )}
         {step === 2 && (
