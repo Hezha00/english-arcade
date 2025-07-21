@@ -116,10 +116,12 @@ export default function ClassroomDetails() {
             first_name: first,
             last_name: last
         }
+        console.log('add_student_to_class payload:', payload)
 
         const { data, error } = await supabase.functions.invoke('add_student_to_class', {
             body: payload
         })
+        console.log('add_student_to_class response:', { data, error })
 
         if (error || !data || !data.username) {
             alert('❌ خطا در ثبت‌نام دانش‌آموز')
