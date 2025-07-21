@@ -40,7 +40,7 @@ export default function TeacherAssignmentsDashboard() {
 
             const { data: allAssignments } = await supabase
                 .from('assignments')
-                .select('*')
+                .select('*, classroom:classroom_id(name)')
                 .eq('teacher_id', uid)
                 .order('created_at', { ascending: false })
 
@@ -92,7 +92,7 @@ export default function TeacherAssignmentsDashboard() {
                                 >
                                     <ListItemText
                                         primary={a.title}
-                                        secondary={`کلاس: ${a.classroom} | مهلت: ${new Date(a.due_date).toLocaleDateString('fa-IR')}`}
+                                        secondary={`کلاس: ${a.classroom?.name || 'نامشخص'} | مهلت: ${new Date(a.due_date).toLocaleDateString('fa-IR')}`}
                                     />
                                 </ListItem>
                             ))}

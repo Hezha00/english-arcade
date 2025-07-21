@@ -23,7 +23,7 @@ export default function TeacherStudentsList() {
             if (id) {
                 const { data, error } = await supabase
                     .from('students')
-                    .select('*')
+                    .select('*, classroom:classroom_id(name)')
                     .eq('teacher_id', id)
                     .order('school', { ascending: true })
 
@@ -36,7 +36,7 @@ export default function TeacherStudentsList() {
 
     const filtered = students.filter((s) =>
         s.school.toLowerCase().includes(searchSchool.toLowerCase()) &&
-        s.classroom.toLowerCase().includes(searchClass.toLowerCase())
+        (s.classroom?.name || '').toLowerCase().includes(searchClass.toLowerCase())
     )
 
     const handleCopy = (username) => {
@@ -103,7 +103,7 @@ export default function TeacherStudentsList() {
                             >
                                 <ListItemText
                                     primary={`👤 ${s.username}`}
-                                    secondary={`🏫 ${s.school} | 🏷 کلاس ${s.classroom}`}
+                                    secondary={`🏫 ${s.school} | �� کلاس ${s.classroom?.name || 'نامشخص'}`}
                                 />
                             </ListItem>
                             {idx < filtered.length - 1 && <Divider />}

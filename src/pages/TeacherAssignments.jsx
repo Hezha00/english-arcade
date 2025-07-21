@@ -17,7 +17,7 @@ export default function TeacherAssignments() {
 
             const { data } = await supabase
                 .from('assignments')
-                .select('*, questions(count)')
+                .select('*, classroom:classroom_id(name), questions(count)')
                 .eq('teacher_id', uid)
                 .order('created_at', { ascending: false })
 
@@ -28,9 +28,10 @@ export default function TeacherAssignments() {
     }, [])
 
     const grouped = assignments.reduce((acc, a) => {
-        acc[a.classroom] = acc[a.classroom] || []
-        acc[a.classroom].push(a)
-        return acc
+        const className = a.classroom?.name || 'نامشخص';
+        acc[className] = acc[className] || [];
+        acc[className].push(a);
+        return acc;
     }, {})
 
     return (

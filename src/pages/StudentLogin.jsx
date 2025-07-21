@@ -60,6 +60,25 @@ export default function StudentLogin() {
             setIsLoading(false)
             return
         }
+        // 3. Ensure students table has a row with id = authData.user.id
+        const { data: idRow, error: idRowError } = await supabase
+            .from('students')
+            .select('id')
+            .eq('id', authData.user.id)
+            .maybeSingle();
+        if (!idRow) {
+            // Use upsert to guarantee the row exists or is updated
+            await supabase.from('students').upsert({
+                id: authData.user.id,
+                username: student.username,
+                auth_id: authData.user.id,
+                teacher_id: student.teacher_id,
+                school: student.school,
+                classroom_id: student.classroom_id,
+                login_streak: student.login_streak,
+                last_login: student.last_login
+            }, { onConflict: ['id'] });
+        }
         localStorage.setItem('student', JSON.stringify(student))
         navigate('/student-dashboard')
         setIsLoading(false)

@@ -11,8 +11,8 @@ import { useParams } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 
 export default function ClassroomDetails() {
-    const { className } = useParams()
-    const classDecoded = decodeURIComponent(className)
+    const { className: classroomIdParam } = useParams()
+    const classroomId = decodeURIComponent(classroomIdParam)
 
     const [students, setStudents] = useState([])
     const [loading, setLoading] = useState(true)
@@ -20,6 +20,7 @@ export default function ClassroomDetails() {
     const [teacherId, setTeacherId] = useState(null)
     const [schoolName, setSchoolName] = useState('')
     const [yearLevel, setYearLevel] = useState('')
+    const [classroomName, setClassroomName] = useState('')
     const [dialogOpen, setDialogOpen] = useState(false)
     const [firstName, setFirstName] = useState('')
     const [lastName, setLastName] = useState('')
@@ -38,21 +39,30 @@ export default function ClassroomDetails() {
 
             const { data: studentList } = await supabase
                 .from('students')
-                .select('id, name, username, password, school, profile_color, classroom, year_level')
+                .select('id, name, username, password, school, profile_color, classroom_id, year_level, classroom:classroom_id(name)')
                 .eq('teacher_id', uid)
-                .eq('classroom', classDecoded)
+                .eq('classroom_id', classroomId)
 
             setStudents(studentList || [])
             if (studentList?.length > 0) {
                 setSchoolName(studentList[0].school || '')
                 setYearLevel(studentList[0].year_level || '')
+                setClassroomName(studentList[0].classroom?.name || '')
+            } else {
+                // Fetch classroom name if no students
+                const { data: cls } = await supabase
+                    .from('classrooms')
+                    .select('name')
+                    .eq('id', classroomId)
+                    .single()
+                setClassroomName(cls?.name || '')
             }
             setSessionReady(true)
             setLoading(false)
         }
 
         fetchData()
-    }, [classDecoded])
+    }, [classroomId])
 
     const generateUsername = (first) =>
         `${first.toLowerCase()}${Math.floor(100 + Math.random() * 900)}`
@@ -100,7 +110,7 @@ export default function ClassroomDetails() {
 
         const payload = {
             teacher_id: teacherId,
-            classroom: classDecoded,
+            classroom_id: classroomId,
             school: schoolName,
             year_level: yearLevel,
             first_name: first,
@@ -141,7 +151,7 @@ export default function ClassroomDetails() {
     return (
         <Box dir="rtl" sx={{ py: 4 }}>
             <Typography variant="h5" fontWeight="bold" gutterBottom>
-                👩‍🏫 دانش‌آموزان کلاس {classDecoded}
+                👩‍🏫 دانش‌آموزان کلاس {classroomName}
             </Typography>
 
             <Button

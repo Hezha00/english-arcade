@@ -1,4 +1,5 @@
 // useClassrooms.js
+// Returns classrooms as [{id, name}] for use with classroom_id selectors. Fully migrated from legacy classroom text field.
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 
@@ -12,14 +13,13 @@ export default function useClassrooms() {
             if (!user?.id) return setLoading(false)
 
             const { data, error } = await supabase
-                .from('students')
-                .select('classroom')
+                .from('classrooms')
+                .select('id, name')
                 .eq('teacher_id', user.id)
 
             if (error) console.error('Classroom fetch error:', error)
 
-            const unique = [...new Set(data?.map(s => s.classroom))]
-            setClassrooms(unique)
+            setClassrooms(data || [])
             setLoading(false)
         }
 

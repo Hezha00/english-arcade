@@ -26,14 +26,10 @@ export default function CreateAssignment() {
 
         const { data } = await supabase
             .from('classrooms')
-            .select('name')
+            .select('id, name')
             .eq('teacher_id', teacherAuthId)
 
-        if (error) {
-            console.error('❌ خطا در دریافت کلاس‌ها:', error)
-        } else {
-            setClassrooms(data || [])
-        }
+        setClassrooms(data || [])
     }
 
     const handleSubmit = async () => {
@@ -50,7 +46,7 @@ export default function CreateAssignment() {
             title,
             description: description || '',
             deadline: dueDate || null,
-            classroom: selectedClassroom,
+            classroom_id: selectedClassroom,
             teacher_id: teacherId,
             type: 'quiz',
             max_attempts: Number(maxAttempts) || 1
@@ -116,7 +112,7 @@ export default function CreateAssignment() {
                             onChange={(e) => setSelectedClassroom(e.target.value)}
                         >
                             {classrooms.map((cls) => (
-                                <MenuItem key={cls.id} value={cls.name}>
+                                <MenuItem key={cls.id} value={cls.id}>
                                     {cls.name}
                                 </MenuItem>
                             ))}

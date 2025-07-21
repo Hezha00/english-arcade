@@ -8,7 +8,8 @@ import {
     Typography,
     CssBaseline,
     Button,
-    IconButton
+    IconButton,
+    ListItemButton
 } from '@mui/material'
 import MenuOpenIcon from '@mui/icons-material/MenuOpen'
 import MenuIcon from '@mui/icons-material/Menu'
@@ -85,30 +86,30 @@ export default function TeacherLayout({ children }) {
                     </Box>
                     <List>
                         {navItems.map((item, i) => (
-                            <ListItem
-                                key={i}
-                                button
-                                onClick={() => navigate(item.path)}
-                                sx={{
-                                    mb: 1,
-                                    borderRadius: 2,
-                                    backgroundColor: location.pathname === item.path ? '#6366f1' : 'transparent',
-                                    color: location.pathname === item.path ? '#fff' : '#ddd',
-                                    '&:hover': {
-                                        backgroundColor: '#4f46e5',
-                                        color: '#fff'
-                                    },
-                                    justifyContent: open ? 'flex-start' : 'center'
-                                }}
-                            >
-                                <ListItemText
-                                    primary={item.label}
+                            <ListItem key={i} disablePadding sx={{ mb: 1, borderRadius: 2 }}>
+                                <ListItemButton
+                                    onClick={() => navigate(item.path)}
                                     sx={{
-                                        display: open ? 'block' : 'none',
-                                        textAlign: 'right'
+                                        borderRadius: 2,
+                                        backgroundColor: location.pathname === item.path ? '#6366f1' : 'transparent',
+                                        color: location.pathname === item.path ? '#fff' : '#ddd',
+                                        '&:hover': {
+                                            backgroundColor: '#4f46e5',
+                                            color: '#fff'
+                                        },
+                                        justifyContent: open ? 'flex-start' : 'center',
+                                        px: 2
                                     }}
-                                />
-                                {!open && <Typography variant="body2">{item.label.slice(0, 2)}</Typography>}
+                                >
+                                    <ListItemText
+                                        primary={item.label}
+                                        sx={{
+                                            display: open ? 'block' : 'none',
+                                            textAlign: 'right'
+                                        }}
+                                    />
+                                    {!open && <Typography variant="body2">{item.label.slice(0, 2)}</Typography>}
+                                </ListItemButton>
                             </ListItem>
                         ))}
                     </List>

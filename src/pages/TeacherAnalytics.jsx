@@ -28,7 +28,7 @@ export default function TeacherAnalytics({ title = '📊 داشبورد تحلی
 
         const { data } = await supabase
             .from('classrooms')
-            .select('name')
+            .select('id, name')
             .eq('teacher_id', teacherAuthId)
 
         setClassrooms(data || [])
@@ -40,7 +40,7 @@ export default function TeacherAnalytics({ title = '📊 داشبورد تحلی
         const { data: students } = await supabase
             .from('students')
             .select('id, name, username')
-            .eq('classroom', selectedClass)
+            .eq('classroom_id', selectedClass)
         if (!students) {
             setGameResults([])
             setLoading(false)
@@ -104,7 +104,7 @@ export default function TeacherAnalytics({ title = '📊 داشبورد تحلی
                         sx={{ fontSize: 18 }}
                     >
                         {classrooms.map(cls => (
-                            <MenuItem key={cls.name} value={cls.name} sx={{ fontSize: 18 }}>{cls.name}</MenuItem>
+                            <MenuItem key={cls.id} value={cls.id} sx={{ fontSize: 18 }}>{cls.name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>

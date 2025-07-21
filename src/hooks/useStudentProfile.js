@@ -5,6 +5,7 @@ import { supabase } from '../supabaseClient'
 export default function useStudentProfile() {
     const [student, setStudent] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [errorMsg, setErrorMsg] = useState('')
 
     useEffect(() => {
         const saved = localStorage.getItem('student')
@@ -21,10 +22,12 @@ export default function useStudentProfile() {
             const { data, error } = await supabase
                 .from('students')
                 .select('*')
-                .eq('id', user.id)
+                .eq('auth_id', user.id)
                 .single()
 
-            if (error) console.error('Student fetch error:', error)
+            if (error) {
+                setErrorMsg('خطا در دریافت اطلاعات دانش‌آموز.');
+            }
             setStudent(data)
             setLoading(false)
         }
@@ -32,5 +35,5 @@ export default function useStudentProfile() {
         fetchStudent()
     }, [])
 
-    return { student, loading }
+    return { student, loading, errorMsg }
 }

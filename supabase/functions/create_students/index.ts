@@ -57,11 +57,29 @@ serve(async (req) => {
 
             if (!first || !last) continue
 
-            const username = `${first.toLowerCase()}${Math.floor(Math.random() * 900 + 100)}`
+            // Generate a unique username
+            let username
+            let usernameTries = 0
+            do {
+                username = `${first.toLowerCase()}${Math.floor(Math.random() * 900 + 100)}`
+                const { data: existingStudent } = await supabase
+                    .from('students')
+                    .select('id')
+                    .eq('username', username)
+                    .maybeSingle()
+                if (!existingStudent) break
+                usernameTries++
+            } while (usernameTries < 10)
+            if (usernameTries === 10) {
+                errors.push({ step: 'username', message: 'Could not generate unique username', first, last })
+                continue
+            }
+
             const password = generatePassword()
             const email = `${username}@arcade.dev`
             const fullName = `${first} ${last}`
 
+            // Step 1: Create Auth user with role: student
             const { data: authUser, error: authErr } = await supabase.auth.admin.createUser({
                 email,
                 password,
@@ -75,7 +93,9 @@ serve(async (req) => {
                 continue
             }
 
+            // Step 2: Insert into students table with id = authUser.user.id
             const { error: dbErr } = await supabase.from('students').insert({
+                id: authUser.user?.id,
                 name: fullName,
                 username,
                 password,
@@ -87,6 +107,8 @@ serve(async (req) => {
             })
 
             if (dbErr) {
+                // Clean up orphaned Auth user
+                await supabase.auth.admin.deleteUser(authUser.user?.id)
                 console.error('❌ DB insert error:', dbErr.message)
                 errors.push({ step: 'students', username, message: dbErr.message })
                 continue

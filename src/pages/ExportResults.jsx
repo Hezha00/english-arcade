@@ -22,7 +22,7 @@ export default function ExportResults() {
 
         const { data } = await supabase
             .from('classrooms')
-            .select('name')
+            .select('id, name')
             .eq('teacher_id', teacherAuthId)
 
         setClassrooms(data || [])
@@ -32,7 +32,7 @@ export default function ExportResults() {
         const { data } = await supabase
             .from('results')
             .select('*')
-            .eq('classroom', selectedClass)
+            .eq('classroom_id', selectedClass)
 
         const formatted = data.map(r => ({
             دانش‌آموز: r.username,
@@ -59,7 +59,7 @@ export default function ExportResults() {
                         onChange={(e) => setSelectedClass(e.target.value)}
                     >
                         {classrooms.map(cls => (
-                            <MenuItem key={cls.name} value={cls.name}>{cls.name}</MenuItem>
+                            <MenuItem key={cls.id} value={cls.id}>{cls.name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>

@@ -107,7 +107,16 @@ export default function StudentGames() {
                                             secondaryAction={
                                                 <Button
                                                     variant="contained"
-                                                    onClick={() => navigate(`/student-quiz/${g.game_id}`)}
+                                                    onClick={() => {
+                                                        // Route based on game type
+                                                        if (g.game_content?.type === 'memory-puzzle') {
+                                                            navigate(`/memory-puzzle-game/${g.game_id}`)
+                                                        } else if (g.game_content?.type === 'emoji-word-matching') {
+                                                            navigate(`/emoji-word-matching/${g.game_id}`)
+                                                        } else {
+                                                            navigate(`/student-quiz/${g.game_id}`)
+                                                        }
+                                                    }}
                                                     disabled={!canPlay}
                                                 >
                                                     {canPlay ? 'شروع بازی' : 'تعداد دفعات مجاز تمام شد'}

@@ -25,8 +25,8 @@ export default function StudentAssignments() {
 
             const { data: allAssignments } = await supabase
                 .from('assignments')
-                .select('id, title, due_at, type, classroom, created_at')
-                .eq('classroom', student.classroom)
+                .select('id, title, due_at, type, classroom_id, created_at, classroom:classroom_id(name)')
+                .eq('classroom_id', student.classroom_id)
                 .eq('is_active', true)
                 .order('created_at', { ascending: false })
 

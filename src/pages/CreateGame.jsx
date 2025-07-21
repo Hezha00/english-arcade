@@ -5,6 +5,12 @@ import {
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
 import EmojiEmotionsIcon from '@mui/icons-material/EmojiEmotions';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
+
+const EMOJI_LIST = [
+  "😀","😁","😂","🤣","😃","😄","😅","😆","😉","😊","😋","😎","😍","😘","🥰","😗","😙","😚","🙂","🤗","🤩","🤔","🤨","😐","😑","😶","🙄","😏","😣","😥","😮","🤐","😯","😪","😫","🥱","😴","😌","😛","😜","😝","🤤","😒","😓","😔","😕","🙃","🤑","😲","☹️","🙁","😖","😞","😟","😤","😢","😭","😦","😧","😨","😩","🤯","😬","😰","😱","🥵","🥶","😳","🤪","😵","😡","😠","🤬","😷","🤒","🤕","🤢","🤮","🥴","😇","🥳","🥺","🤠","🤡","🤥","🤫","🤭","🧐","🤓","😈","👿","👹","👺","💀","👻","👽","🤖","💩","😺","😸","😹","😻","😼","😽","🙀","😿","😾"
+];
 
 const GAME_TYPE_REGISTRY = {
   'memory-puzzle': {
@@ -24,11 +30,11 @@ const GAME_TYPE_REGISTRY = {
     fields: [
       { name: 'name', label: 'نام بازی', type: 'text', required: true },
       { name: 'description', label: 'توضیحات', type: 'text', required: false },
-      { name: 'emojis', label: 'ایموجی‌ها (هر خط یک ایموجی)', type: 'emojis', required: true },
-      { name: 'words', label: 'کلمات (هر خط یک کلمه)', type: 'words', required: true },
+      { name: 'pairs', label: 'جفت‌های ایموجی و کلمه', type: 'emojiPairs', required: true },
+      { name: 'max_retries', label: 'حداکثر دفعات تکرار', type: 'number', required: true, min: 1, max: 5, default: 1 },
     ],
-    minPairs: 4,
-    maxPairs: 12,
+    minPairs: 5,
+    maxPairs: 30,
   },
 };
 
@@ -37,14 +43,19 @@ const TEMPLATE_TYPE_MAP = {
   'بازی تطبیق ایموجی و کلمه (Emoji-Word Matching)': 'emoji-word-matching',
 };
 
+// Utility: check if a string is a visible emoji (not empty, not just whitespace)
+function isValidEmoji(str) {
+  return typeof str === 'string' && str.trim().length > 0;
+}
+
 export default function CreateGame() {
   const navigate = useNavigate();
   const [gameType, setGameType] = useState('memory-puzzle');
-  const [form, setForm] = useState({ name: '', description: '', wordPairs: [{ english: '', persian: '' }], emojis: '', words: '' });
+  const [form, setForm] = useState({ name: '', description: '', wordPairs: [{ english: '', persian: '' }], pairs: [{ emoji: '', word: '' }], max_retries: 1 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [showEmojiKeyboard, setShowEmojiKeyboard] = useState(false);
+  const [showEmojiKeyboard, setShowEmojiKeyboard] = useState(null); // null means no specific emoji picker open
   const emojiTextAreaRef = React.useRef();
   const [allowedTypes, setAllowedTypes] = useState([]);
   const [fetchingTemplates, setFetchingTemplates] = useState(true);
@@ -77,18 +88,34 @@ export default function CreateGame() {
   };
 
   const handlePairChange = (idx, field, value) => {
-    const updated = [...form.wordPairs];
-    updated[idx][field] = value;
-    setForm(f => ({ ...f, wordPairs: updated }));
+    if (gameType === 'emoji-word-matching') {
+      const updated = [...form.pairs];
+      updated[idx][field] = value;
+      setForm(f => ({ ...f, pairs: updated }));
+    } else {
+      const updated = [...form.wordPairs];
+      updated[idx][field] = value;
+      setForm(f => ({ ...f, wordPairs: updated }));
+    }
   };
 
     const addPair = () => {
-    setForm(f => ({ ...f, wordPairs: [...f.wordPairs, { english: '', persian: '' }] }));
+    if (gameType === 'emoji-word-matching') {
+      setForm(f => ({ ...f, pairs: [...f.pairs, { emoji: '', word: '' }] }));
+    } else {
+      setForm(f => ({ ...f, wordPairs: [...f.wordPairs, { english: '', persian: '' }] }));
+    }
   };
   const removePair = idx => {
-    if (form.wordPairs.length > 1) {
-      setForm(f => ({ ...f, wordPairs: f.wordPairs.filter((_, i) => i !== idx) }));
-        }
+    if (gameType === 'emoji-word-matching') {
+      if (form.pairs.length > 1) {
+        setForm(f => ({ ...f, pairs: f.pairs.filter((_, i) => i !== idx) }));
+      }
+    } else {
+      if (form.wordPairs.length > 1) {
+        setForm(f => ({ ...f, wordPairs: f.wordPairs.filter((_, i) => i !== idx) }));
+      }
+    }
   };
 
   const validate = () => {
@@ -106,6 +133,19 @@ export default function CreateGame() {
         setError('تمام جفت‌های کلمه باید کامل باشند');
         return false;
         }
+    } else if (gameType === 'emoji-word-matching') {
+      if (form.pairs.length < 5 || form.pairs.length > 30) {
+        setError('تعداد جفت‌های ایموجی و کلمه باید بین ۵ تا ۳۰ باشد.');
+        return false;
+      }
+      if (form.pairs.some(p => !isValidEmoji(p.emoji) || !p.word.trim())) {
+        setError('تمام جفت‌های ایموجی و کلمه باید کامل باشند.');
+        return false;
+      }
+      if (!form.max_retries || isNaN(Number(form.max_retries)) || Number(form.max_retries) < 1 || Number(form.max_retries) > 5) {
+        setError('حداکثر دفعات تکرار باید بین ۱ تا ۵ باشد.');
+        return false;
+      }
     }
     setError('');
     return true;
@@ -127,15 +167,15 @@ export default function CreateGame() {
           settings: { gridSize: 4, maxRetries: 20 },
         };
       } else if (gameType === 'emoji-word-matching') {
-        const emojiList = form.emojis.split('\n').map(e => e.trim()).filter(Boolean);
-        const wordList = form.words.split('\n').map(w => w.trim()).filter(Boolean);
-        if (emojiList.length !== wordList.length) throw new Error('تعداد ایموجی‌ها و کلمات باید برابر باشد.');
         gameContent = {
           type: 'emoji-word-matching',
                         version: '1.0',
                         created_at: new Date().toISOString(),
-          pairs: emojiList.map((emoji, i) => ({ emoji, word: wordList[i] })),
-          settings: { maxRetries: 10 },
+          pairs: form.pairs,
+          settings: {
+            maxRetries: 10,
+            max_retries: Number(form.max_retries)
+          },
         };
       }
       const { data, error: insertError } = await supabase.from('games').insert({
@@ -145,6 +185,7 @@ export default function CreateGame() {
                     created_at: new Date().toISOString(),
                     game_content: gameContent,
         is_active: true,
+        max_retries: Number(form.max_retries),
       }).select('id').single();
       if (insertError) throw insertError;
       setSuccess(true);
@@ -190,7 +231,7 @@ export default function CreateGame() {
                     <TextField
                       id={field.name}
                       name={field.name}
-                      fullWidth
+                        fullWidth
                       value={form[field.name] || ''}
                       onChange={e => handleChange(field.name, e.target.value)}
                       sx={{ bgcolor: '#fff', borderRadius: 2 }}
@@ -208,10 +249,10 @@ export default function CreateGame() {
                         <React.Fragment key={idx}>
                           <Grid item xs={5}>
                             <label htmlFor={`english-${idx}`} style={{ display: 'block', fontWeight: 'bold', marginBottom: 4 }}>کلمه انگلیسی</label>
-                            <TextField
+                    <TextField
                               id={`english-${idx}`}
                               name={`english-${idx}`}
-                              fullWidth
+                        fullWidth
                               value={pair.english}
                               onChange={e => handlePairChange(idx, 'english', e.target.value)}
                               sx={{ bgcolor: '#fff', borderRadius: 2 }}
@@ -223,116 +264,124 @@ export default function CreateGame() {
                             <TextField
                               id={`persian-${idx}`}
                               name={`persian-${idx}`}
-                              fullWidth
+                        fullWidth
                               value={pair.persian}
                               onChange={e => handlePairChange(idx, 'persian', e.target.value)}
                               sx={{ bgcolor: '#fff', borderRadius: 2 }}
                               required
                             />
                           </Grid>
-                          <Grid item xs={2} sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Button color="error" onClick={() => removePair(idx)} disabled={form.wordPairs.length <= 1}>حذف</Button>
+                          <Grid item xs={2}>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              onClick={() => removePair(idx)}
+                              sx={{ mt: 2 }}
+                            >
+                              حذف جفت
+                            </Button>
                           </Grid>
                         </React.Fragment>
                       ))}
                     </Grid>
-                    <Button variant="outlined" sx={{ mt: 2 }} onClick={addPair} disabled={form.wordPairs.length >= config.maxPairs}>افزودن جفت جدید</Button>
-                  </Box>
-                );
-              }
-              if (field.type === 'emojis') {
-                return (
-                  <Box key={field.name} sx={{ mb: 3 }}>
-                    <label htmlFor={field.name} style={{ display: 'block', fontWeight: 'bold', marginBottom: 4 }}>{field.label}</label>
-                    <TextField
-                      id={field.name}
-                      name={field.name}
-                      fullWidth
-                      value={form[field.name] || ''}
-                      onChange={e => handleChange(field.name, e.target.value)}
-                      sx={{ bgcolor: '#fff', borderRadius: 2 }}
-                      multiline
-                      minRows={4}
-                      required={field.required}
-                      inputRef={emojiTextAreaRef}
-                      onFocus={() => setShowEmojiKeyboard(true)}
-                    />
                     <Button
                       variant="outlined"
-                      startIcon={<EmojiEmotionsIcon />}
-                      sx={{ mt: 1, mb: 1, mr: 1 }}
-                      onClick={() => setShowEmojiKeyboard(v => !v)}
+                      color="primary"
+                      onClick={addPair}
+                      sx={{ mt: 2 }}
                     >
-                      انتخاب ایموجی
+                      اضافه کردن جفت جدید
                     </Button>
-                    {showEmojiKeyboard && (
-                      <Box sx={{
-                        display: 'flex', flexWrap: 'wrap', gap: 1, maxHeight: 200, overflowY: 'auto', bgcolor: '#fff', borderRadius: 2, p: 1, boxShadow: 2, zIndex: 10
-                      }}>
-                        {EMOJI_LIST.map((emoji, i) => (
-                    <Button 
-                            key={i}
-                            sx={{ minWidth: 36, minHeight: 36, fontSize: '1.5rem', m: 0.5 }}
-                            onClick={() => {
-                              const ref = emojiTextAreaRef.current;
-                              if (ref) {
-                                const start = ref.selectionStart;
-                                const end = ref.selectionEnd;
-                                const value = form.emojis;
-                                const newValue = value.slice(0, start) + emoji + value.slice(end);
-                                handleChange('emojis', newValue);
-                                setTimeout(() => {
-                                  ref.focus();
-                                  ref.selectionStart = ref.selectionEnd = start + emoji.length;
-                                }, 0);
-                              } else {
-                                handleChange('emojis', (form.emojis || '') + emoji);
-                              }
-                            }}
-                            aria-label={`افزودن ایموجی ${emoji}`}
-                          >
-                            {emoji}
-                    </Button>
-                        ))}
-                      </Box>
-                    )}
                   </Box>
                 );
               }
-              if (field.type === 'words') {
+              if (field.type === 'emojiPairs') {
                 return (
                   <Box key={field.name} sx={{ mb: 3 }}>
-                    <label htmlFor={field.name} style={{ display: 'block', fontWeight: 'bold', marginBottom: 4 }}>{field.label}</label>
-                    <TextField
-                      id={field.name}
-                      name={field.name}
-                      fullWidth
-                      value={form[field.name] || ''}
-                      onChange={e => handleChange(field.name, e.target.value)}
-                      sx={{ bgcolor: '#fff', borderRadius: 2 }}
-                      multiline
-                      minRows={4}
-                      required={field.required}
-                    />
+                    <Typography fontWeight="bold" sx={{ mb: 1 }}>{field.label}</Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      {form.pairs.map((pair, idx) => (
+                        <Paper key={idx} sx={{ p: 2, mb: 1, position: 'relative', display: 'flex', alignItems: 'center', gap: 2, bgcolor: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(8px)', color: '#222', borderRadius: 3, boxShadow: 4 }} elevation={0}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 80 }}>
+                            <label htmlFor={`emoji-${idx}`} style={{ fontWeight: 'bold', marginBottom: 4 }}>ایموجی</label>
+                            <Button
+                              variant="outlined"
+                              sx={{ minWidth: 36, minHeight: 36, fontSize: '1.5rem', bgcolor: '#fff', borderRadius: 2 }}
+                              onClick={() => setShowEmojiKeyboard(showEmojiKeyboard === idx ? null : idx)}
+                            >
+                              {pair.emoji || '🙂'}
+                            </Button>
+                            {showEmojiKeyboard === idx && (
+                              <Box sx={{ position: 'absolute', top: 60, right: 0, zIndex: 2000 }}>
+                                <Picker
+                                  data={data}
+                                  onEmojiSelect={emoji => {
+                                    handlePairChange(idx, 'emoji', emoji.native || emoji.id);
+                                    setShowEmojiKeyboard(null);
+                                  }}
+                                  theme="light"
+                                  locale="fa"
+                                  previewPosition="none"
+                                  searchPosition="top"
+                                  perLine={8}
+                                  maxFrequentRows={0}
+                                  autoFocus
+                                  style={{ width: 350 }}
+                                />
+                              </Box>
+                            )}
+                          </Box>
+                          <Box sx={{ flex: 1, mx: 2 }}>
+                            <label htmlFor={`word-${idx}`} style={{ fontWeight: 'bold', marginBottom: 4, display: 'block' }}>کلمه</label>
+                            <TextField
+                              id={`word-${idx}`}
+                              name={`word-${idx}`}
+                              fullWidth
+                              value={pair.word}
+                              onChange={e => handlePairChange(idx, 'word', e.target.value)}
+                              sx={{ bgcolor: '#fff', borderRadius: 2 }}
+                              required
+                            />
+                          </Box>
+                          <Box sx={{ minWidth: 100, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            <Button
+                              variant="contained"
+                              color="primary"
+                              onClick={() => removePair(idx)}
+                              sx={{ mt: 2 }}
+                            >
+                              حذف جفت
+                            </Button>
+                          </Box>
+                        </Paper>
+                      ))}
+                    </Box>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={addPair}
+                      sx={{ mt: 2 }}
+                    >
+                      اضافه کردن جفت جدید
+                    </Button>
                   </Box>
                 );
               }
-              return null;
             })}
+            {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+            {success && <Alert severity="success" sx={{ mb: 2 }}>بازی با موفقیت ساخته شد!</Alert>}
+            <Button
+              variant="contained"
+              fullWidth
+              sx={{ fontWeight: 'bold', background: 'linear-gradient(90deg, #6366f1, #4f46e5)', color: '#fff', mt: 2 }}
+              onClick={handleSubmit}
+              disabled={loading || allowedTypes.length === 0}
+            >
+              {loading ? <CircularProgress size={24} /> : 'ثبت بازی'}
+            </Button>
           </>
         )}
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 2 }}>بازی با موفقیت ساخته شد!</Alert>}
-                    <Button 
-                        variant="contained" 
-          fullWidth
-          sx={{ fontWeight: 'bold', background: 'linear-gradient(90deg, #6366f1, #4f46e5)', color: '#fff', mt: 2 }}
-          onClick={handleSubmit}
-          disabled={loading || allowedTypes.length === 0}
-        >
-          {loading ? <CircularProgress size={24} /> : 'ثبت بازی'}
-                    </Button>
       </Paper>
-        </Box>
+    </Box>
   );
 }

@@ -42,9 +42,10 @@ export default function Classrooms() {
 
     const fetchClasses = async (uid) => {
         setLoading(true)
+        // Query students with classroom_id and join classroom name
         const { data: students, error } = await supabase
             .from('students')
-            .select('classroom, school')
+            .select('classroom_id, school, classroom:classroom_id(name)')
             .eq('teacher_id', uid)
 
         if (error) {
@@ -57,10 +58,10 @@ export default function Classrooms() {
             try {
                 const { data: fallbackClasses, error: fallbackError } = await supabase
                     .from('classrooms')
-                    .select('name, school')
+                    .select('id, name, school')
                     .eq('teacher_id', uid)
                 if (fallbackError) throw fallbackError
-                setClasses((fallbackClasses || []).map(c => ({ classroom: c.name, school: c.school, count: 0 })))
+                setClasses((fallbackClasses || []).map(c => ({ classroom_id: c.id, classroom: c.name, school: c.school, count: 0 })))
             } catch (err) {
                 setClasses([])
                 console.error('❌ Error fetching fallback classes:', err)
@@ -70,15 +71,15 @@ export default function Classrooms() {
         }
 
         const grouped = {}
-        students.forEach(({ classroom, school }) => {
-            if (!classroom) return
-            const key = `${classroom}||${school || 'نامشخص'}`
+        students.forEach(({ classroom_id, classroom, school }) => {
+            if (!classroom_id) return
+            const key = `${classroom_id}||${classroom?.name || 'نامشخص'}||${school || 'نامشخص'}`
             grouped[key] = (grouped[key] || 0) + 1
         })
 
         const result = Object.entries(grouped).map(([key, count]) => {
-            const [classroom, school] = key.split('||')
-            return { classroom, school, count }
+            const [classroom_id, classroom, school] = key.split('||')
+            return { classroom_id, classroom, school, count }
         })
 
         setClasses(result)
@@ -115,13 +116,15 @@ export default function Classrooms() {
         const payload = {
             teacher_id: teacherId,
             school: school.trim(),
-            classroom: classroom.trim(),
             year_level: yearLevel.trim(),
-            students: studentData
+            students: studentData,
         }
 
         const { data, error } = await supabase.functions.invoke('create_students', {
-            body: payload
+            body: {
+                ...payload,
+                classroom_name: classroom.trim() // if needed by backend, otherwise remove
+            }
         })
 
         let upsertError = null
@@ -189,10 +192,10 @@ export default function Classrooms() {
                         </Typography>
                     ) : (
                         <List sx={{ maxWidth: 800, width: '100%' }}>
-                            {classes.map(({ classroom, school, count }) => (
-                                <React.Fragment key={classroom + school}>
+                            {classes.map(({ classroom_id, classroom, school, count }) => (
+                                <React.Fragment key={classroom_id + school}>
                                     <ListItemButton onClick={() =>
-                                        navigate(`/classrooms/${encodeURIComponent(classroom)}`)
+                                        navigate(`/classrooms/${encodeURIComponent(classroom_id)}`)
                                     }>
                                         <ListItemText
                                             primary={`کلاس: ${classroom}`}

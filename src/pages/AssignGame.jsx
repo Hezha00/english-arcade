@@ -44,7 +44,7 @@ export default function AssignGame() {
             try {
                 const { data, error } = await supabase
                     .from('classrooms')
-                    .select('name')
+                    .select('id, name')
                     .eq('teacher_id', user.id)
                 if (error) throw error
                 myClasses = data
@@ -58,21 +58,21 @@ export default function AssignGame() {
                 setLoading(false)
                 return
             }
-            setClassrooms(myClasses.map(c => c.name) || [])
+            setClassrooms(myClasses || [])
 
             // Get already assigned classrooms for this game
             const { data: assignments } = await supabase
                 .from('game_assignments')
-                .select('classroom')
+                .select('classroom_id')
                 .eq('game_id', gameId)
-            setAssignedClassrooms(assignments?.map(a => a.classroom) || [])
+            setAssignedClassrooms(assignments?.map(a => a.classroom_id) || [])
             setLoading(false)
         }
         fetchData()
     }, [gameId])
 
-    const handleAssign = async (classroom) => {
-        const expires_at = selectedDates[classroom]
+    const handleAssign = async (classroom_id) => {
+        const expires_at = selectedDates[classroom_id]
         if (!expires_at) {
             setSnackbar({ open: true, message: '📅 لطفاً تاریخ ضرب‌العجل را انتخاب کنید', severity: 'warning' })
             return
@@ -83,7 +83,7 @@ export default function AssignGame() {
         }
         const { error } = await supabase.from('game_assignments').insert({
             game_id: gameId,
-            classroom,
+            classroom_id,
             teacher_id: teacherId,
             assigned_at: new Date().toISOString(),
             expires_at,
@@ -92,13 +92,13 @@ export default function AssignGame() {
         if (error) {
             setSnackbar({ open: true, message: '❌ خطا در اختصاص بازی: ' + error.message, severity: 'error' })
         } else {
-            setAssignedClassrooms([...assignedClassrooms, classroom])
-            setSnackbar({ open: true, message: `✅ بازی "${gameName}" به کلاس "${classroom}" اختصاص یافت`, severity: 'success' })
+            setAssignedClassrooms([...assignedClassrooms, classroom_id])
+            setSnackbar({ open: true, message: `✅ بازی "${gameName}" به کلاس اختصاص یافت`, severity: 'success' })
         }
     }
 
-    const handleDateChange = (classroom, value) => {
-        setSelectedDates({ ...selectedDates, [classroom]: value })
+    const handleDateChange = (classroom_id, value) => {
+        setSelectedDates({ ...selectedDates, [classroom_id]: value })
     }
 
     const handleSnackbarClose = () => setSnackbar({ ...snackbar, open: false })
@@ -108,9 +108,9 @@ export default function AssignGame() {
         // Re-fetch assignments
         const { data: assignments } = await supabase
             .from('game_assignments')
-            .select('classroom')
+            .select('classroom_id')
             .eq('game_id', gameId)
-        setAssignedClassrooms(assignments?.map(a => a.classroom) || [])
+        setAssignedClassrooms(assignments?.map(a => a.classroom_id) || [])
         setLoading(false)
     }
 
@@ -134,21 +134,21 @@ export default function AssignGame() {
                     ) : (
                         <List>
                             {classrooms.map((classroom, i) => {
-                                const alreadyAssigned = assignedClassrooms.includes(classroom)
+                                const alreadyAssigned = assignedClassrooms.includes(classroom.id)
                                 return (
-                                    <React.Fragment key={i}>
+                                    <React.Fragment key={classroom.id}>
                                         <ListItem>
                                             <Grid container alignItems="center" spacing={2}>
                                                 <Grid sx={{ width: { xs: '100%', md: '33.33%' } }}>
                                                     <ListItemText
-                                                        primary={`کلاس: ${classroom}`}
+                                                        primary={`کلاس: ${classroom.name}`}
                                                         secondary={`بازی: ${gameName}`}
                                                         sx={{ textAlign: 'right' }}
                                                     />
                                                 </Grid>
                                                 <Grid sx={{ width: { xs: '100%', md: '33.33%' } }}>
                                                     <DatePicker
-                                                        onChange={e => handleDateChange(classroom, e.value)}
+                                                        onChange={e => handleDateChange(classroom.id, e.value)}
                                                         locale="fa"
                                                         calendarType="jalali"
                                                         hasTime
@@ -164,7 +164,7 @@ export default function AssignGame() {
                                                         variant={alreadyAssigned ? 'outlined' : 'contained'}
                                                         color={alreadyAssigned ? 'success' : 'primary'}
                                                         fullWidth
-                                                        onClick={() => handleAssign(classroom)}
+                                                        onClick={() => handleAssign(classroom.id)}
                                                         disabled={alreadyAssigned}
                                                         startIcon={alreadyAssigned ? <CheckCircleIcon /> : null}
                                                     >

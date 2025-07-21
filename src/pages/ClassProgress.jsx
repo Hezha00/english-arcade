@@ -21,7 +21,7 @@ export default function ClassProgress() {
 
         const { data } = await supabase
             .from('classrooms')
-            .select('name')
+            .select('id, name')
             .eq('teacher_id', teacherAuthId)
 
         setClassrooms(data || [])
@@ -35,7 +35,7 @@ export default function ClassProgress() {
         const { data } = await supabase
             .from('results')
             .select('*')
-            .eq('classroom', selected)
+            .eq('classroom_id', selected)
 
         const grouped = {}
         data.forEach(r => {
@@ -55,7 +55,7 @@ export default function ClassProgress() {
                     <InputLabel>کلاس</InputLabel>
                     <Select value={selected} onChange={(e) => setSelected(e.target.value)}>
                         {classrooms.map(cls => (
-                            <MenuItem key={cls.name} value={cls.name}>{cls.name}</MenuItem>
+                            <MenuItem key={cls.id} value={cls.id}>{cls.name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>

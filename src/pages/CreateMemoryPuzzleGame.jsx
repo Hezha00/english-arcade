@@ -60,6 +60,7 @@ export default function CreateMemoryPuzzleGame() {
         file_url: null,
         is_global: false,
         created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         duration_min: Math.ceil(timeLimit / 60),
         max_retries: 20,
         expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),

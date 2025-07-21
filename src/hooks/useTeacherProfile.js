@@ -5,6 +5,7 @@ import { supabase } from '../supabaseClient'
 export default function useTeacherProfile() {
     const [profile, setProfile] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [errorMsg, setErrorMsg] = useState('')
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -14,14 +15,18 @@ export default function useTeacherProfile() {
             const { data, error } = await supabase
                 .from('teachers')
                 .select('*')
-                .eq('id', user.id)
+                .eq('auth_id', user.id)
                 .single()
 
             if (error && error.code === 'PGRST116') {
-                await supabase.from('teachers').insert({ id: user.id, email: user.email })
-                setProfile({ id: user.id, email: user.email })
+                await supabase.from('teachers').insert({ auth_id: user.id, email: user.email })
+                setProfile({ auth_id: user.id, email: user.email })
             } else {
                 setProfile(data)
+            }
+
+            if (error) {
+                setErrorMsg('خطا در دریافت اطلاعات معلم.');
             }
 
             setLoading(false)
@@ -30,5 +35,5 @@ export default function useTeacherProfile() {
         fetchProfile()
     }, [])
 
-    return { profile, loading }
+    return { profile, loading, errorMsg }
 }

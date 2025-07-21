@@ -25,7 +25,7 @@ export default function ResultsDashboard() {
 
         const { data } = await supabase
             .from('classrooms')
-            .select('name')
+            .select('id, name')
             .eq('teacher_id', teacherAuthId)
 
         setClassrooms(data || [])
@@ -35,7 +35,7 @@ export default function ResultsDashboard() {
         const { data } = await supabase
             .from('results')
             .select('*')
-            .eq('classroom', selectedClass)
+            .eq('classroom_id', selectedClass)
             .order('submitted_at', { ascending: false })
 
         setResults(data || [])
@@ -53,7 +53,7 @@ export default function ResultsDashboard() {
                             onChange={(e) => setSelectedClass(e.target.value)}
                         >
                             {classrooms.map((c) => (
-                                <MenuItem key={c.name} value={c.name}>
+                                <MenuItem key={c.id} value={c.id}>
                                     {c.name}
                                 </MenuItem>
                             ))}
@@ -65,7 +65,7 @@ export default function ResultsDashboard() {
                                 <ListItem>
                                     <ListItemText
                                         primary={`${r.username} - نمره: ${r.score} / ${r.total}`}
-                                        secondary={`کلاس: ${r.classroom} | تاریخ: ${new Date(r.submitted_at).toLocaleDateString('fa-IR')}`}
+                                        secondary={`کلاس: ${classrooms.find(cls => cls.id === r.classroom_id)?.name || ''} | تاریخ: ${new Date(r.submitted_at).toLocaleDateString('fa-IR')}`}
                                         sx={{ textAlign: 'right' }}
                                     />
                                 </ListItem>

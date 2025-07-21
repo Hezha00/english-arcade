@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import {
     TextField, Typography, Paper, Button, Box, Alert, CircularProgress,
-    IconButton, InputAdornment, Snackbar
+    IconButton, InputAdornment, Snackbar, MenuItem, Select, InputLabel, FormControl
 } from '@mui/material'
 import RefreshIcon from '@mui/icons-material/Refresh'
 import FileCopyIcon from '@mui/icons-material/FileCopy'
@@ -11,17 +11,26 @@ export default function TeacherAddStudent() {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [school, setSchool] = useState('')
-    const [classroom, setClassroom] = useState('')
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
     const [createdUser, setCreatedUser] = useState(null)
     const [copySuccess, setCopySuccess] = useState(false)
     const [teacherId, setTeacherId] = useState(null)
+    const [classroom_id, setClassroomId] = useState('')
+    const [classrooms, setClassrooms] = useState([])
 
     useEffect(() => {
         const fetchUser = async () => {
             const { data } = await supabase.auth.getUser()
             setTeacherId(data?.user?.id || null)
+            // Fetch classrooms for selection
+            if (data?.user?.id) {
+                const { data: cls } = await supabase
+                    .from('classrooms')
+                    .select('id, name')
+                    .eq('teacher_id', data.user.id)
+                setClassrooms(cls || [])
+            }
         }
         fetchUser()
     }, [])
@@ -40,8 +49,20 @@ export default function TeacherAddStudent() {
         setMessage('')
         setCreatedUser(null)
 
-        if (!username || !teacherId || !school || !classroom) {
+        if (!username || !teacherId || !school || !classroom_id) {
             setMessage('لطفاً تمام فیلدها را وارد کنید.')
+            setLoading(false)
+            return
+        }
+
+        // Check username uniqueness in students table
+        const { data: existingStudent } = await supabase
+            .from('students')
+            .select('id')
+            .eq('username', username)
+            .maybeSingle();
+        if (existingStudent) {
+            setMessage('این نام کاربری قبلاً ثبت شده است. لطفاً نام کاربری دیگری انتخاب کنید.')
             setLoading(false)
             return
         }
@@ -69,18 +90,22 @@ export default function TeacherAddStudent() {
 
         const authId = auth.user.id
 
-        // Step 2: Insert into students table
+        // Step 2: Insert into students table with id = authId
         const { error: dbError } = await supabase.from('students').insert({
+            id: authId,
             username,
+            password: finalPassword,
             auth_id: authId,
             teacher_id: teacherId,
             school,
-            classroom,
+            classroom_id,
             login_streak: 0,
             last_login: null
         })
 
         if (dbError) {
+            // Clean up orphaned Auth user
+            await supabase.auth.admin.deleteUser(authId)
             setMessage(`خطا در ثبت اطلاعات دانش‌آموز: ${dbError.message}`)
             setLoading(false)
             return
@@ -90,7 +115,7 @@ export default function TeacherAddStudent() {
         setUsername('')
         setPassword('')
         setSchool('')
-        setClassroom('')
+        setClassroomId('')
         setLoading(false)
     }
 
@@ -160,13 +185,18 @@ export default function TeacherAddStudent() {
                     margin="normal"
                 />
 
-                <TextField
-                    label="کلاس"
-                    fullWidth
-                    value={classroom}
-                    onChange={(e) => setClassroom(e.target.value)}
-                    margin="normal"
-                />
+                <FormControl fullWidth margin="normal">
+                    <InputLabel>کلاس</InputLabel>
+                    <Select
+                        value={classroom_id}
+                        onChange={(e) => setClassroomId(e.target.value)}
+                        label="کلاس"
+                    >
+                        {classrooms.map((cls) => (
+                            <MenuItem key={cls.id} value={cls.id}>{cls.name}</MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
 
                 {message && <Alert severity="error" sx={{ mt: 2 }}>{message}</Alert>}
 

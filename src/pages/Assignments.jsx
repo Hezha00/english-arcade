@@ -27,7 +27,7 @@ export default function Assignments() {
 
         const { data } = await supabase
             .from('classrooms')
-            .select('name')
+            .select('id, name')
             .eq('teacher_id', teacherAuthId)
 
         setClassrooms(data || [])
@@ -56,7 +56,7 @@ export default function Assignments() {
         const teacherId = session.user.id
 
         const { data, error } = await supabase.from('assignments').insert([
-            { title, description, deadline, classroom, teacher_id: teacherId }
+            { title, description, deadline, classroom_id: classroom, teacher_id: teacherId }
         ]).select()
 
         if (error) {
@@ -99,7 +99,7 @@ export default function Assignments() {
                     <InputLabel>کلاس</InputLabel>
                     <Select value={classroom} onChange={e => setClassroom(e.target.value)}>
                         {classrooms.map(cls => (
-                            <MenuItem key={cls.name} value={cls.name}>{cls.name}</MenuItem>
+                            <MenuItem key={cls.id} value={cls.id}>{cls.name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>

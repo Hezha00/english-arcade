@@ -65,7 +65,7 @@ export default function TeacherGamesDashboard() {
   const handleAssign = (gameId) => navigate(`/assign-game/${gameId}`);
   const handleResults = (gameId) => navigate(`/game-details/${gameId}`);
   const handleDelete = async (gameId) => {
-    if (!window.confirm('آیا مطمئن هستید که می‌خواهید این بازی را حذف کنید؟')) return;
+    if (!window.confirm('آیا مطمئن هستید که می‌خواهید این بازی را حذف کنید؟\nتوجه: با حذف بازی، تمام تاریخچه و نمرات دانش‌آموزانی که این بازی را انجام داده‌اند نیز حذف خواهد شد.')) return;
     // First, delete all assignments for this game
     const { error: assignError } = await supabase.from('game_assignments').delete().eq('game_id', gameId);
     if (assignError) {

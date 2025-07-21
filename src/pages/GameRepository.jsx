@@ -104,6 +104,10 @@ export default function GameRepository() {
         label: 'بازی حافظه',
         createPath: '/create-memory-puzzle',
       },
+      'emoji-word-matching': {
+        label: 'بازی تطبیق ایموجی و کلمه',
+        createPath: '/create-game',
+      },
     }
 
     if (loading) return <CircularProgress sx={{ mt: 10 }} />

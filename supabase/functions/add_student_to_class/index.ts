@@ -32,7 +32,26 @@ serve(async (req) => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         );
 
-        const username = `${first_name.toLowerCase()}${Math.floor(100 + Math.random() * 900)}`;
+        // Generate a unique username
+        let username;
+        let usernameTries = 0;
+        do {
+            username = `${first_name.toLowerCase()}${Math.floor(100 + Math.random() * 900)}`;
+            const { data: existingStudent } = await supabase
+                .from('students')
+                .select('id')
+                .eq('username', username)
+                .maybeSingle();
+            if (!existingStudent) break;
+            usernameTries++;
+        } while (usernameTries < 10);
+        if (usernameTries === 10) {
+            return new Response(JSON.stringify({ error: 'Could not generate unique username' }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                status: 400
+            });
+        }
+
         const password = generatePassword();
         const email = `${username}@arcade.dev`;
         const fullName = `${first_name} ${last_name}`;
@@ -53,7 +72,9 @@ serve(async (req) => {
 
         const auth_id = authUser.user.id;
 
+        // Insert into students table with id = auth_id
         const { error: dbErr } = await supabase.from('students').insert([{
+            id: auth_id,
             name: fullName,
             username,
             password,
@@ -65,6 +86,8 @@ serve(async (req) => {
         }]);
 
         if (dbErr) {
+            // Clean up orphaned Auth user
+            await supabase.auth.admin.deleteUser(auth_id);
             return new Response(JSON.stringify({ error: dbErr.message }), {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },
                 status: 500

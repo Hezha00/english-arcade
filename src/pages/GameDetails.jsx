@@ -70,10 +70,10 @@ export default function GameDetails() {
                 {game.name}
             </Typography>
             <Paper sx={{ p: 3, mb: 3, bgcolor: 'rgba(255,255,255,0.20)', backdropFilter: 'blur(16px)', border: '1.5px solid rgba(255,255,255,0.35)', borderRadius: 4, color: '#222' }}>
-                <Typography variant="subtitle1" sx={{ mb: 1 }}>{config.label}</Typography>
-                <Typography variant="body1" sx={{ mb: 2 }}>{game.description || config.description}</Typography>
-                <Typography variant="body2" sx={{ mb: 1 }}><b>راهنمای معلم:</b> {config.howToMake}</Typography>
-                <Typography variant="body2" sx={{ mb: 2 }}><b>راهنمای دانش‌آموز:</b> {config.howToPlay}</Typography>
+                <Typography variant="subtitle1" sx={{ mb: 1 }}>{config?.label || "نوع بازی نامشخص"}</Typography>
+                <Typography variant="body1" sx={{ mb: 2 }}>{game.description || config?.description || ""}</Typography>
+                <Typography variant="body2" sx={{ mb: 1 }}><b>راهنمای معلم:</b> {config?.howToMake || ""}</Typography>
+                <Typography variant="body2" sx={{ mb: 2 }}><b>راهنمای دانش‌آموز:</b> {config?.howToPlay || ""}</Typography>
             </Paper>
             <Typography variant="h6" gutterBottom>🎓 نمرات دانش‌آموزان</Typography>
             <FormControl sx={{ mb: 3, minWidth: 180 }} size="small">

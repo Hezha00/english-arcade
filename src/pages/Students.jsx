@@ -14,7 +14,7 @@ export default function Students() {
     const [students, setStudents] = useState([])
     const [form, setForm] = useState({
         username: '', password: '', school: '', year: '',
-        classroom: '', profileColor: ''
+        classroom_id: '', profileColor: ''
     })
     const [classrooms, setClassrooms] = useState([])
     const [editingId, setEditingId] = useState(null)
@@ -30,12 +30,12 @@ export default function Students() {
 
         const { data: cls } = await supabase
             .from('classrooms')
-            .select('name')
+            .select('id, name')
             .eq('teacher_id', teacherAuthId)
 
         const { data: stu } = await supabase
             .from('students')
-            .select('*')
+            .select('*, classroom:classroom_id(name)')
             .eq('teacher_id', teacherAuthId)
             .order('created_at', { ascending: false })
 
@@ -46,22 +46,59 @@ export default function Students() {
     const handleAdd = async () => {
         const { data: session } = await supabase.auth.getUser()
         const teacherId = session.user.id
-        const { username, password, school, year, classroom, profileColor } = form
+        const { username, password, school, year, classroom_id, profileColor } = form
 
-        const { error } = await supabase.from('students').insert([{
-            username,
-            password,
-            school,
-            year_level: year,
-            classroom,
-            profile_color: profileColor,
-            teacher_id: teacherId
-        }])
-
-        if (!error) {
-            setForm({ username: '', password: '', school: '', year: '', classroom: '', profileColor: '' })
-            fetchData()
+        // Check username uniqueness in students table
+        const { data: existingStudent } = await supabase
+            .from('students')
+            .select('id')
+            .eq('username', username)
+            .maybeSingle();
+        if (existingStudent) {
+            alert('این نام کاربری قبلاً ثبت شده است. لطفاً نام کاربری دیگری انتخاب کنید.')
+            return
         }
+
+        const finalPassword = password || Math.random().toString(36).slice(-8)
+        const email = `${username}@arcade.dev`
+
+        // Step 1: Create Auth user with role: student
+        const { data: auth, error: authError } = await supabase.auth.admin.createUser({
+            email,
+            password: finalPassword,
+            email_confirm: true,
+            user_metadata: { role: 'student' }
+        })
+
+        if (authError) {
+            alert(`خطا در ایجاد حساب: ${authError.message}`)
+            return
+        }
+
+        const authId = auth.user.id
+
+        // Step 2: Insert into students table with id = authId
+        const { error: dbError } = await supabase.from('students').insert({
+            id: authId,
+            username,
+            password: finalPassword,
+            auth_id: authId,
+            teacher_id: teacherId,
+            school,
+            classroom_id,
+            year_level: year,
+            profile_color: profileColor
+        })
+
+        if (dbError) {
+            // Clean up orphaned Auth user
+            await supabase.auth.admin.deleteUser(authId)
+            alert(`خطا در ثبت اطلاعات دانش‌آموز: ${dbError.message}`)
+            return
+        }
+
+        setForm({ username: '', password: '', school: '', year: '', classroom_id: '', profileColor: '' })
+        fetchData()
     }
 
     const handleDelete = async (id) => {
@@ -70,6 +107,18 @@ export default function Students() {
     }
 
     const handleSave = async (id) => {
+        // Prevent duplicate usernames on edit
+        if (editingFields.username) {
+            const { data: existingStudent } = await supabase
+                .from('students')
+                .select('id')
+                .eq('username', editingFields.username)
+                .maybeSingle();
+            if (existingStudent && existingStudent.id !== id) {
+                alert('این نام کاربری قبلاً ثبت شده است. لطفاً نام کاربری دیگری انتخاب کنید.')
+                return
+            }
+        }
         await supabase
             .from('students')
             .update(editingFields)
@@ -83,7 +132,7 @@ export default function Students() {
         const data = students.map((s) => ({
             نام‌کاربری: s.username,
             رمزعبور: s.password,
-            کلاس: s.classroom,
+            کلاس: s.classroom?.name || '',
             مدرسه: s.school,
             پایه: s.year_level,
             رنگ_پروفایل: s.profile_color
@@ -112,19 +161,14 @@ export default function Students() {
                 <FormControl fullWidth margin="normal">
                     <InputLabel>کلاس</InputLabel>
                     <Select
-                        value={form.classroom}
-                        onChange={(e) => setForm({ ...form, classroom: e.target.value })}
-                        onBlur={(e) => setForm({ ...form, classroom: e.target.value })}
+                        value={form.classroom_id}
+                        onChange={(e) => setForm({ ...form, classroom_id: e.target.value })}
+                        onBlur={(e) => setForm({ ...form, classroom_id: e.target.value })}
                         label="کلاس"
                     >
                         {classrooms.map((cls) => (
-                            <MenuItem key={cls.id} value={cls.name}>{cls.name}</MenuItem>
+                            <MenuItem key={cls.id} value={cls.id}>{cls.name}</MenuItem>
                         ))}
-                        {form.classroom && !classrooms.find(c => c.name === form.classroom) && (
-                            <MenuItem value={form.classroom}>
-                                ➕ ایجاد کلاس جدید: {form.classroom}
-                            </MenuItem>
-                        )}
                     </Select>
                 </FormControl>
                 <TextField label="رنگ پروفایل (Hex)" fullWidth margin="normal" placeholder="#aabbcc"
@@ -169,7 +213,7 @@ export default function Students() {
                                                 setEditingFields({ ...editingFields, username: e.target.value })
                                             } />
                                     ) : (
-                                        `${stu.username} (${stu.classroom})`
+                                        `${stu.username} (${stu.classroom?.name || ''})`
                                     )
                                 }
                                 secondary={

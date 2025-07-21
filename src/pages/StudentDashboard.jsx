@@ -12,6 +12,7 @@ import HistoryIcon from '@mui/icons-material/History';
 import SchoolIcon from '@mui/icons-material/School';
 import QuizIcon from '@mui/icons-material/Quiz';
 import { differenceInDays, parseISO } from 'date-fns';
+import { supabase } from '../supabaseClient';
 
 
 export default function StudentDashboard() {
@@ -19,10 +20,21 @@ export default function StudentDashboard() {
     const [selectedBook, setSelectedBook] = useState('');
     const navigate = useNavigate();
     const [subscription, setSubscription] = useState(null);
+    const [classroomName, setClassroomName] = useState('');
     useEffect(() => {
         const saved = localStorage.getItem('student');
         if (saved) {
-            setStudent(JSON.parse(saved));
+            const stu = JSON.parse(saved);
+            setStudent(stu);
+            // Fetch classroom name if classroom_id exists
+            if (stu.classroom_id) {
+                supabase
+                    .from('classrooms')
+                    .select('name')
+                    .eq('id', stu.classroom_id)
+                    .single()
+                    .then(({ data }) => setClassroomName(data?.name || ''));
+            }
         } else {
             navigate('/student-login');
         }
@@ -44,7 +56,7 @@ export default function StudentDashboard() {
     if (!student) return null;
 
     // Check if this is an independent student (no classroom, school, or teacher)
-    const isIndependent = !student.classroom && !student.school && !student.teacher_id;
+    const isIndependent = !student.classroom_id;
 
     if (isIndependent) {
         // Calculate days left
@@ -214,7 +226,6 @@ export default function StudentDashboard() {
 
             <Typography sx={{ mb: 2 }}>🎓 مدرسه: {student.school}</Typography>
             <Typography sx={{ mb: 2 }}>📚 پایه: {student.year_level || 'ثبت نشده'}</Typography>
-            <Typography sx={{ mb: 4 }}>🏫 کلاس: {student.classroom}</Typography>
 
             <Grid container spacing={5} sx={{ mt: 1, justifyContent: 'center', width: '100%' }}>
                 <Grid sx={{ width: { xs: '100%', md: '33%' }, display: 'flex', justifyContent: 'center' }}>

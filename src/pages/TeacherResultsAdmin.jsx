@@ -26,7 +26,7 @@ export default function TeacherResultsAdmin() {
         const teacherAuthId = auth?.user?.id
         const { data } = await supabase
             .from('classrooms')
-            .select('name')
+            .select('id, name')
             .eq('teacher_id', teacherAuthId)
 
         setClassrooms(data || [])
@@ -36,7 +36,7 @@ export default function TeacherResultsAdmin() {
         const { data } = await supabase
             .from('results')
             .select('*')
-            .eq('classroom', selectedClass)
+            .eq('classroom_id', selectedClass)
             .order('submitted_at', { ascending: false })
 
         setResults(data || [])
@@ -82,7 +82,7 @@ export default function TeacherResultsAdmin() {
                         onChange={(e) => setSelectedClass(e.target.value)}
                     >
                         {classrooms.map(cls => (
-                            <MenuItem key={cls.name} value={cls.name}>{cls.name}</MenuItem>
+                            <MenuItem key={cls.id} value={cls.id}>{cls.name}</MenuItem>
                         ))}
                     </Select>
                 </FormControl>

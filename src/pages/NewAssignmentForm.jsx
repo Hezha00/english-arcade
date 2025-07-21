@@ -14,7 +14,7 @@ moment.loadPersian({ dialect: 'persian-modern' })
 export default function NewAssignmentForm() {
     const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
-    const [classroom, setClassroom] = useState('')
+    const [classroom_id, setClassroomId] = useState('')
     const [dueDate, setDueDate] = useState(null)
     const [maxAttempts, setMaxAttempts] = useState(1)
     const [isActive, setIsActive] = useState(false)
@@ -28,13 +28,11 @@ export default function NewAssignmentForm() {
             const { data: auth } = await supabase.auth.getUser()
             const uid = auth?.user?.id
 
-            const { data: studentClassrooms } = await supabase
-                .from('students')
-                .select('classroom')
+            const { data: cls } = await supabase
+                .from('classrooms')
+                .select('id, name')
                 .eq('teacher_id', uid)
-
-            const unique = [...new Set((studentClassrooms || []).map(s => s.classroom))]
-            setClassrooms(unique)
+            setClassrooms(cls || [])
         }
         load()
     }, [])
@@ -44,27 +42,9 @@ export default function NewAssignmentForm() {
         const { data: auth } = await supabase.auth.getUser()
         const uid = auth?.user?.id
 
-        const { data: classroomExists } = await supabase
-            .from('classrooms')
-            .select('*')
-            .eq('name', classroom)
-            .eq('teacher_id', uid)
-            .single()
-
-        if (!classroomExists) {
-            const { error: classError } = await supabase
-                .from('classrooms')
-                .insert([{ name: classroom, teacher_id: uid }])
-            if (classError) {
-                setMessage('❌ خطا در ایجاد کلاس')
-                setLoading(false)
-                return
-            }
-        }
-
         const { data, error } = await supabase.from('assignments').insert([{
             title,
-            classroom,
+            classroom_id,
             teacher_id: uid,
             description,
             type: 'quiz',
@@ -123,16 +103,13 @@ export default function NewAssignmentForm() {
                     label="کلاس"
                     fullWidth
                     select
-                    value={classroom}
-                    onChange={(e) => setClassroom(e.target.value)}
+                    value={classroom_id}
+                    onChange={(e) => setClassroomId(e.target.value)}
                     sx={{ mb: 2 }}
                 >
-                    {classrooms.map((c, i) => (
-                        <MenuItem key={i} value={c}>{c}</MenuItem>
+                    {classrooms.map((c) => (
+                        <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
                     ))}
-                    {classroom && !classrooms.includes(classroom) && (
-                        <MenuItem value={classroom}>{`➕ ایجاد کلاس جدید: ${classroom}`}</MenuItem>
-                    )}
                 </TextField>
 
                 <LocalizationProvider dateAdapter={AdapterMomentJalaali}>
@@ -173,7 +150,7 @@ export default function NewAssignmentForm() {
                 <Divider sx={{ my: 2 }} />
                 <Button
                     variant="contained"
-                    disabled={loading || !title || !classroom}
+                    disabled={loading || !title || !classroom_id}
                     onClick={handleSave}
                 >
                     {loading ? 'در حال ذخیره...' : 'ثبت نهایی تکلیف'}
