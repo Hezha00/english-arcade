@@ -110,7 +110,7 @@ export default function ClassroomDetails() {
 
         const payload = {
             teacher_id: teacherId,
-            classroom_id: classroomId,
+            classroom: classroomId, // <-- correct key
             school: schoolName,
             year_level: yearLevel,
             first_name: first,
