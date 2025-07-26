@@ -115,17 +115,17 @@ export default function Classrooms() {
 
         const payload = {
             teacher_id: teacherId,
+            classroom: classroom.trim(), // must match function param
             school: school.trim(),
             year_level: yearLevel.trim(),
             students: studentData,
         }
+        console.log('create_students payload:', payload)
 
         const { data, error } = await supabase.functions.invoke('create_students', {
-            body: {
-                ...payload,
-                classroom_name: classroom.trim() // if needed by backend, otherwise remove
-            }
+            body: payload
         })
+        console.log('create_students response:', { data, error })
 
         let upsertError = null
         if (!error) {
