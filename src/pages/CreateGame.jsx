@@ -336,7 +336,7 @@ export default function CreateGame() {
                             <TextField
                               id={`word-${idx}`}
                               name={`word-${idx}`}
-                              fullWidth
+                        fullWidth
                               value={pair.word}
                               onChange={e => handlePairChange(idx, 'word', e.target.value)}
                               sx={{ bgcolor: '#fff', borderRadius: 2 }}

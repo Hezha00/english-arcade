@@ -55,7 +55,7 @@ export default function TeacherSignup() {
 
     const normalizedEmail = email.trim().toLowerCase()
 
-    const { error: signErr } = await supabase.auth.signUp({
+    const { data, error: signErr } = await supabase.auth.signUp({
       email: normalizedEmail,
       password
     })
@@ -65,6 +65,12 @@ export default function TeacherSignup() {
       setError('ثبت‌نام انجام نشد. لطفاً اطلاعات وارد شده را بررسی کنید.')
       setLoading(false)
       return
+    }
+
+    // Upsert into teachers table with auth_id = user.id
+    const user = data?.user
+    if (user?.id) {
+      await supabase.from('teachers').upsert({ auth_id: user.id }, { onConflict: ['auth_id'] })
     }
 
     setSent(true)

@@ -38,6 +38,9 @@ export default function TeacherAuth() {
 
         const uid = auth.user.id
 
+        // Always upsert into teachers table with auth_id = uid
+        await supabase.from('teachers').upsert({ auth_id: uid }, { onConflict: ['auth_id'] })
+
         // Attempt to fetch existing teacher profile
         const { data: existingTeacher, error: fetchErr } = await supabase
             .from('teachers')
@@ -77,7 +80,7 @@ export default function TeacherAuth() {
             setIsLoading(false);
             return;
         }
-        
+
         // Ensure teacherProfile is not null before accessing properties
         if (!teacherProfile) {
             console.error('❌ Teacher profile is null after fetch/insert attempt.');

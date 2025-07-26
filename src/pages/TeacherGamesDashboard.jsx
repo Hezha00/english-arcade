@@ -116,7 +116,7 @@ export default function TeacherGamesDashboard() {
           ) : (
             <Grid container spacing={2}>
               {filteredGames.map(game => (
-                <Grid item xs={12} key={game.id}>
+                <Grid key={game.id}>
                   <Paper sx={{ p: 2, borderRadius: 3, mb: 1, bgcolor: 'rgba(255,255,255,0.85)', boxShadow: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                       <Typography variant="h6" fontWeight="bold" color="#4f46e5">{game.name}</Typography>
