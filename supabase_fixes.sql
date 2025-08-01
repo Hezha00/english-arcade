@@ -348,3 +348,47 @@ GRANT EXECUTE ON FUNCTION mark_game_completed(UUID, UUID) TO authenticated;
 -- =====================================================
 -- END OF SUPABASE FIXES
 -- ===================================================== 
+
+-- Fix database schema issues for students table
+-- This migration adds classroom_id field and updates existing data
+
+-- 1. Add classroom_id column to students table
+ALTER TABLE public.students ADD COLUMN classroom_id uuid;
+
+-- 2. Create classrooms for existing students based on their classroom name
+-- First, insert unique classroom combinations into classrooms table
+INSERT INTO public.classrooms (name, school, teacher_id, year_level)
+SELECT DISTINCT 
+    s.classroom,
+    s.school,
+    s.teacher_id,
+    s.year_level
+FROM public.students s
+WHERE s.classroom IS NOT NULL 
+    AND s.classroom != ''
+    AND NOT EXISTS (
+        SELECT 1 FROM public.classrooms c 
+        WHERE c.name = s.classroom 
+        AND c.teacher_id = s.teacher_id
+    );
+
+-- 3. Update students table to set classroom_id based on classroom name
+UPDATE public.students 
+SET classroom_id = c.id
+FROM public.classrooms c
+WHERE public.students.classroom = c.name 
+    AND public.students.teacher_id = c.teacher_id
+    AND public.students.classroom_id IS NULL;
+
+-- 4. Add foreign key constraint (optional - uncomment if you want to enforce referential integrity)
+-- ALTER TABLE public.students ADD CONSTRAINT fk_students_classroom_id 
+--     FOREIGN KEY (classroom_id) REFERENCES public.classrooms(id) ON DELETE SET NULL;
+
+-- 5. Create index on classroom_id for better performance
+CREATE INDEX IF NOT EXISTS idx_students_classroom_id ON public.students(classroom_id);
+
+-- 6. Update the create_students function to handle both classroom and classroom_id
+-- (This will be done in the function code itself)
+
+-- Note: The classroom field is kept for backward compatibility
+-- You can remove it later if all code is updated to use classroom_id 

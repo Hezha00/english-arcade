@@ -39,18 +39,45 @@ serve(async (req) => {
         const errors: any[] = []
         const created: { username: string; password: string }[] = []
 
-        const { error: classErr } = await supabase.from('classrooms').insert({
-            name: classroom,
-            school,
-            teacher_id,
-            year_level
-        })
+        // Step 1: Create or get classroom
+        let classroomId: string | null = null
 
-        if (classErr) {
-            console.error('❌ Classroom insert error:', classErr.message)
-            errors.push({ step: 'classroom', message: classErr.message })
+        // First, try to find existing classroom
+        const { data: existingClassroom } = await supabase
+            .from('classrooms')
+            .select('id')
+            .eq('name', classroom)
+            .eq('teacher_id', teacher_id)
+            .maybeSingle()
+
+        if (existingClassroom) {
+            classroomId = existingClassroom.id
+        } else {
+            // Create new classroom
+            const { data: newClassroom, error: classErr } = await supabase
+                .from('classrooms')
+                .insert({
+                    name: classroom,
+                    school,
+                    teacher_id,
+                    year_level
+                })
+                .select('id')
+                .single()
+
+            if (classErr) {
+                console.error('❌ Classroom insert error:', classErr.message)
+                errors.push({ step: 'classroom', message: classErr.message })
+                return new Response(JSON.stringify({ error: 'Failed to create classroom', details: classErr.message }), {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 400
+                })
+            }
+
+            classroomId = newClassroom.id
         }
 
+        // Step 2: Create students
         for (const s of students) {
             const first = s.first_name?.trim()
             const last = s.last_name?.trim()
@@ -79,7 +106,7 @@ serve(async (req) => {
             const email = `${username}@arcade.dev`
             const fullName = `${first} ${last}`
 
-            // Step 1: Create Auth user with role: student
+            // Step 3: Create Auth user with role: student
             const { data: authUser, error: authErr } = await supabase.auth.admin.createUser({
                 email,
                 password,
@@ -93,7 +120,7 @@ serve(async (req) => {
                 continue
             }
 
-            // Step 2: Insert into students table with id = authUser.user.id
+            // Step 4: Insert into students table with both classroom and classroom_id
             const { error: dbErr } = await supabase.from('students').insert({
                 id: authUser.user?.id,
                 name: fullName,
@@ -101,7 +128,8 @@ serve(async (req) => {
                 password,
                 auth_id: authUser.user?.id,
                 teacher_id,
-                classroom,
+                classroom, // Keep for backward compatibility
+                classroom_id: classroomId, // New field
                 school,
                 year_level
             })

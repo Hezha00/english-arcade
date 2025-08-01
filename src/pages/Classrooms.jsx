@@ -42,45 +42,47 @@ export default function Classrooms() {
 
     const fetchClasses = async (uid) => {
         setLoading(true)
-        // Query students with classroom_id and join classroom name
-        const { data: students, error } = await supabase
-            .from('students')
-            .select('classroom_id, school, classroom:classroom_id(name)')
+
+        // First, get all classrooms for this teacher
+        const { data: classrooms, error: classError } = await supabase
+            .from('classrooms')
+            .select('id, name, school')
             .eq('teacher_id', uid)
 
-        if (error) {
-            console.error('❌ Error fetching students:', error.message)
+        if (classError) {
+            console.error('❌ Error fetching classrooms:', classError.message)
             setLoading(false)
             return
         }
 
-        if (students.length === 0) {
-            try {
-                const { data: fallbackClasses, error: fallbackError } = await supabase
-                    .from('classrooms')
-                    .select('id, name, school')
-                    .eq('teacher_id', uid)
-                if (fallbackError) throw fallbackError
-                setClasses((fallbackClasses || []).map(c => ({ classroom_id: c.id, classroom: c.name, school: c.school, count: 0 })))
-            } catch (err) {
-                setClasses([])
-                console.error('❌ Error fetching fallback classes:', err)
+        // Then, get student counts for each classroom
+        const { data: students, error: studentError } = await supabase
+            .from('students')
+            .select('classroom_id')
+            .eq('teacher_id', uid)
+            .not('classroom_id', 'is', null)
+
+        if (studentError) {
+            console.error('❌ Error fetching students:', studentError.message)
+            setLoading(false)
+            return
+        }
+
+        // Count students per classroom
+        const studentCounts = {}
+        students.forEach(student => {
+            if (student.classroom_id) {
+                studentCounts[student.classroom_id] = (studentCounts[student.classroom_id] || 0) + 1
             }
-            setLoading(false)
-            return
-        }
-
-        const grouped = {}
-        students.forEach(({ classroom_id, classroom, school }) => {
-            if (!classroom_id) return
-            const key = `${classroom_id}||${classroom?.name || 'نامشخص'}||${school || 'نامشخص'}`
-            grouped[key] = (grouped[key] || 0) + 1
         })
 
-        const result = Object.entries(grouped).map(([key, count]) => {
-            const [classroom_id, classroom, school] = key.split('||')
-            return { classroom_id, classroom, school, count }
-        })
+        // Combine classroom data with student counts
+        const result = classrooms.map(classroom => ({
+            classroom_id: classroom.id,
+            classroom: classroom.name,
+            school: classroom.school,
+            count: studentCounts[classroom.id] || 0
+        }))
 
         setClasses(result)
         setLoading(false)
@@ -108,7 +110,25 @@ export default function Classrooms() {
         setSubmitting(true)
         setCreatedList([])
 
-        const studentData = studentFields.map(({ first, last }) => ({
+        // Validate required fields
+        if (!teacherId || !classroom.trim() || !school.trim() || !yearLevel.trim()) {
+            alert('❌ لطفاً تمام فیلدهای کلاس را پر کنید.')
+            setSubmitting(false)
+            return
+        }
+
+        // Validate that at least one student has both first and last name
+        const validStudents = studentFields.filter(({ first, last }) =>
+            first.trim() && last.trim()
+        )
+
+        if (validStudents.length === 0) {
+            alert('❌ لطفاً حداقل یک دانش‌آموز با نام و نام خانوادگی وارد کنید.')
+            setSubmitting(false)
+            return
+        }
+
+        const studentData = validStudents.map(({ first, last }) => ({
             first_name: first.trim(),
             last_name: last.trim()
         }))
@@ -127,20 +147,8 @@ export default function Classrooms() {
         })
         console.log('create_students response:', { data, error })
 
-        let upsertError = null
-        if (!error) {
-            const { error: upErr } = await supabase.from('classrooms').upsert({
-                name: classroom.trim(),
-                school: school.trim(),
-                teacher_id: teacherId,
-                year_level: yearLevel.trim(),
-                created_at: new Date().toISOString()
-            }, { onConflict: ['name', 'teacher_id'] })
-            upsertError = upErr
-        }
-
-        if (error || upsertError) {
-            alert('❌ عملیات ناموفق بود. خطا در ایجاد کلاس یا دانش‌آموزان.\n' + (error?.message || '') + (upsertError?.message || ''))
+        if (error) {
+            alert('❌ عملیات ناموفق بود. خطا در ایجاد کلاس یا دانش‌آموزان.\n' + (error?.message || ''))
             setSubmitting(false)
             return
         }

@@ -32,7 +32,43 @@ serve(async (req) => {
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         );
 
-        // Generate a unique username
+        // Step 1: Create or get classroom
+        let classroomId: string | null = null;
+
+        // First, try to find existing classroom
+        const { data: existingClassroom } = await supabase
+            .from('classrooms')
+            .select('id')
+            .eq('name', classroom)
+            .eq('teacher_id', teacher_id)
+            .maybeSingle();
+
+        if (existingClassroom) {
+            classroomId = existingClassroom.id;
+        } else {
+            // Create new classroom
+            const { data: newClassroom, error: classErr } = await supabase
+                .from('classrooms')
+                .insert({
+                    name: classroom,
+                    school,
+                    teacher_id,
+                    year_level
+                })
+                .select('id')
+                .single();
+
+            if (classErr) {
+                return new Response(JSON.stringify({ error: 'Failed to create classroom', details: classErr.message }), {
+                    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+                    status: 400
+                });
+            }
+
+            classroomId = newClassroom.id;
+        }
+
+        // Step 2: Generate a unique username
         let username;
         let usernameTries = 0;
         do {
@@ -56,6 +92,7 @@ serve(async (req) => {
         const email = `${username}@arcade.dev`;
         const fullName = `${first_name} ${last_name}`;
 
+        // Step 3: Create Auth user
         const { data: authUser, error: authErr } = await supabase.auth.admin.createUser({
             email,
             password,
@@ -72,7 +109,7 @@ serve(async (req) => {
 
         const auth_id = authUser.user.id;
 
-        // Insert into students table with id = auth_id
+        // Step 4: Insert into students table with both classroom and classroom_id
         const { error: dbErr } = await supabase.from('students').insert([{
             id: auth_id,
             name: fullName,
@@ -80,7 +117,8 @@ serve(async (req) => {
             password,
             auth_id,
             teacher_id,
-            classroom,
+            classroom, // Keep for backward compatibility
+            classroom_id: classroomId, // New field
             school,
             year_level
         }]);
