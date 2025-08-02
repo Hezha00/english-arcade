@@ -24,6 +24,8 @@ export default function ClassroomDetails() {
     const [dialogOpen, setDialogOpen] = useState(false)
     const [firstName, setFirstName] = useState('')
     const [lastName, setLastName] = useState('')
+    const [manualSchoolName, setManualSchoolName] = useState('')
+    const [manualYearLevel, setManualYearLevel] = useState('')
 
     useEffect(() => {
         const fetchData = async () => {
@@ -37,26 +39,70 @@ export default function ClassroomDetails() {
             const uid = session.user.id
             setTeacherId(uid)
 
-            const { data: studentList } = await supabase
+            // First, fetch classroom details
+            const { data: classroomData, error: classroomError } = await supabase
+                .from('classrooms')
+                .select('name, school, year_level')
+                .eq('id', classroomId)
+                .single()
+
+            if (classroomError) {
+                console.error('Error fetching classroom:', classroomError)
+                alert('خطا در دریافت اطلاعات کلاس')
+                setSessionReady(true)
+                setLoading(false)
+                return
+            }
+
+            // Set classroom details
+            setClassroomName(classroomData?.name || '')
+
+            // If classroom doesn't have school/year_level, try to get from teacher profile
+            let finalSchoolName = classroomData?.school || ''
+            let finalYearLevel = classroomData?.year_level || ''
+
+            if (!finalSchoolName || !finalYearLevel) {
+                const { data: teacherProfile } = await supabase
+                    .from('teachers')
+                    .select('school, year_level')
+                    .eq('auth_id', uid)
+                    .single()
+
+                if (teacherProfile) {
+                    finalSchoolName = finalSchoolName || teacherProfile.school || ''
+                    finalYearLevel = finalYearLevel || teacherProfile.year_level || ''
+                }
+            }
+
+            setSchoolName(finalSchoolName)
+            setYearLevel(finalYearLevel)
+
+            // Update classroom with school and year level if they're missing
+            if (classroomData && (!classroomData.school || !classroomData.year_level)) {
+                const updateData = {}
+                if (!classroomData.school && finalSchoolName) updateData.school = finalSchoolName
+                if (!classroomData.year_level && finalYearLevel) updateData.year_level = finalYearLevel
+
+                if (Object.keys(updateData).length > 0) {
+                    await supabase
+                        .from('classrooms')
+                        .update(updateData)
+                        .eq('id', classroomId)
+                }
+            }
+
+            // Fetch students
+            const { data: studentList, error: studentError } = await supabase
                 .from('students')
                 .select('id, name, username, password, school, profile_color, classroom_id, year_level, classroom:classroom_id(name)')
                 .eq('teacher_id', uid)
                 .eq('classroom_id', classroomId)
 
-            setStudents(studentList || [])
-            if (studentList?.length > 0) {
-                setSchoolName(studentList[0].school || '')
-                setYearLevel(studentList[0].year_level || '')
-                setClassroomName(studentList[0].classroom?.name || '')
-            } else {
-                // Fetch classroom name if no students
-                const { data: cls } = await supabase
-                    .from('classrooms')
-                    .select('name')
-                    .eq('id', classroomId)
-                    .single()
-                setClassroomName(cls?.name || '')
+            if (studentError) {
+                console.error('Error fetching students:', studentError)
             }
+
+            setStudents(studentList || [])
             setSessionReady(true)
             setLoading(false)
         }
@@ -99,45 +145,82 @@ export default function ClassroomDetails() {
     const handleCreateStudent = async () => {
         const first = firstName.trim()
         const last = lastName.trim()
-        if (!first || !last || !yearLevel || !schoolName || !teacherId) {
-            alert('اطلاعات ناقص: نام، نام خانوادگی، کلاس یا مدرسه یافت نشد')
+
+        // Improved validation with specific error messages
+        const validationErrors = []
+
+        if (!first) validationErrors.push('نام')
+        if (!last) validationErrors.push('نام خانوادگی')
+        if (!yearLevel && !manualYearLevel) validationErrors.push('پایه تحصیلی')
+        if (!schoolName && !manualSchoolName) validationErrors.push('نام مدرسه')
+        if (!teacherId) validationErrors.push('شناسه معلم')
+        if (!classroomName) validationErrors.push('نام کلاس')
+
+        if (validationErrors.length > 0) {
+            alert(`اطلاعات ناقص: ${validationErrors.join('، ')} یافت نشد`)
+            console.error('Validation errors:', {
+                first, last, yearLevel, schoolName, teacherId, classroomName,
+                manualYearLevel, manualSchoolName
+            })
             return
         }
 
-        const fullName = `${first} ${last}`
-        const username = generateUsername(first)
-        const password = generatePassword()
+        // Use manual values if provided, otherwise use the fetched values
+        const finalSchoolName = manualSchoolName || schoolName
+        const finalYearLevel = manualYearLevel || yearLevel
 
         const payload = {
             teacher_id: teacherId,
-            classroom: classroomName, // Use classroom name instead of ID
-            school: schoolName,
-            year_level: yearLevel,
+            classroom: classroomName,
+            school: finalSchoolName,
+            year_level: finalYearLevel,
             first_name: first,
             last_name: last
         }
+
         console.log('add_student_to_class payload:', payload)
 
-        const { data, error } = await supabase.functions.invoke('add_student_to_class', {
-            body: payload
-        })
-        console.log('add_student_to_class response:', { data, error })
+        try {
+            const { data, error } = await supabase.functions.invoke('add_student_to_class', {
+                body: payload
+            })
 
-        if (error || !data || !data.username) {
-            alert('❌ خطا در ثبت‌نام دانش‌آموز')
-        } else {
+            console.log('add_student_to_class response:', { data, error })
+
+            if (error) {
+                console.error('Function error:', error)
+                alert(`❌ خطا در ثبت‌نام دانش‌آموز: ${error.message || 'خطای نامشخص'}`)
+                return
+            }
+
+            if (!data || !data.username) {
+                console.error('Invalid response data:', data)
+                alert('❌ پاسخ نامعتبر از سرور')
+                return
+            }
+
+            // Success - close dialog and update state
             setDialogOpen(false)
             setFirstName('')
             setLastName('')
+            setManualSchoolName('')
+            setManualYearLevel('')
+
+            // Add new student to the list
             setStudents(prev => [...prev, {
-                id: Math.random().toString(36).slice(2),
+                id: data.id || Math.random().toString(36).slice(2),
                 name: data.name,
                 username: data.username,
                 password: data.password,
                 school: schoolName,
                 year_level: yearLevel
             }])
+
             alert(`✅ "${data.name}" با نام کاربری "${data.username}" اضافه شد`)
+
+        } catch (err) {
+            console.error('Unexpected error:', err)
+            alert(`❌ خطای غیرمنتظره: ${err.message}`)
         }
     }
 
@@ -164,6 +247,20 @@ export default function ClassroomDetails() {
             >
                 افزودن دانش‌آموز
             </Button>
+
+            {/* Debug information - remove in production */}
+            {process.env.NODE_ENV === 'development' && (
+                <Box sx={{ mb: 2, p: 2, bgcolor: 'rgba(255,255,255,0.1)', borderRadius: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                        Debug Info: TeacherID: {teacherId ? 'Set' : 'Not Set'} |
+                        School: {schoolName || 'Not Set'} |
+                        Year: {yearLevel || 'Not Set'} |
+                        Classroom: {classroomName || 'Not Set'} |
+                        Manual School: {manualSchoolName || 'None'} |
+                        Manual Year: {manualYearLevel || 'None'}
+                    </Typography>
+                </Box>
+            )}
 
             {loading ? (
                 <Box sx={{ textAlign: 'center', mt: 5 }}>
@@ -222,7 +319,13 @@ export default function ClassroomDetails() {
                 </Paper>
             )}
 
-            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} fullWidth maxWidth="sm" dir="rtl">
+            <Dialog open={dialogOpen} onClose={() => {
+                setDialogOpen(false)
+                setFirstName('')
+                setLastName('')
+                setManualSchoolName('')
+                setManualYearLevel('')
+            }} fullWidth maxWidth="sm" dir="rtl">
                 <DialogTitle>➕ افزودن دانش‌آموز جدید</DialogTitle>
                 <DialogContent>
                     <TextField
@@ -230,13 +333,57 @@ export default function ClassroomDetails() {
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         sx={{ mb: 2 }}
+                        required
                     />
                     <TextField
                         fullWidth label="نام خانوادگی"
                         value={lastName}
                         onChange={(e) => setLastName(e.target.value)}
-                        sx={{ mb: 3 }}
+                        sx={{ mb: 2 }}
+                        required
                     />
+
+                    {/* Show school and year level if not set, or allow editing */}
+                    {(!schoolName || !yearLevel) && (
+                        <>
+                            <TextField
+                                fullWidth label="نام مدرسه"
+                                value={manualSchoolName || schoolName}
+                                onChange={(e) => setManualSchoolName(e.target.value)}
+                                sx={{ mb: 2 }}
+                                required={!schoolName}
+                                helperText={!schoolName ? "نام مدرسه الزامی است" : ""}
+                            />
+                            <TextField
+                                fullWidth label="پایه تحصیلی"
+                                value={manualYearLevel || yearLevel}
+                                onChange={(e) => setManualYearLevel(e.target.value)}
+                                sx={{ mb: 2 }}
+                                required={!yearLevel}
+                                helperText={!yearLevel ? "پایه تحصیلی الزامی است" : ""}
+                            />
+                        </>
+                    )}
+
+                    {/* Show current values if they are set */}
+                    {(schoolName && yearLevel) && (
+                        <Box sx={{ mb: 2, p: 2, bgcolor: 'rgba(0,0,0,0.05)', borderRadius: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                مدرسه: {schoolName} | پایه: {yearLevel}
+                            </Typography>
+                            <Button
+                                size="small"
+                                onClick={() => {
+                                    setManualSchoolName(schoolName)
+                                    setManualYearLevel(yearLevel)
+                                }}
+                                sx={{ mt: 1 }}
+                            >
+                                تغییر اطلاعات مدرسه و پایه
+                            </Button>
+                        </Box>
+                    )}
+
                     <Button variant="contained" fullWidth onClick={handleCreateStudent}>
                         ثبت دانش‌آموز
                     </Button>

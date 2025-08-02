@@ -10,6 +10,8 @@ import { supabase } from '../supabaseClient'
 export default function TeacherAddStudent() {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
+    const [firstName, setFirstName] = useState('')
+    const [lastName, setLastName] = useState('')
     const [school, setSchool] = useState('')
     const [loading, setLoading] = useState(false)
     const [message, setMessage] = useState('')
@@ -23,7 +25,6 @@ export default function TeacherAddStudent() {
         const fetchUser = async () => {
             const { data } = await supabase.auth.getUser()
             setTeacherId(data?.user?.id || null)
-            // Fetch classrooms for selection
             if (data?.user?.id) {
                 const { data: cls } = await supabase
                     .from('classrooms')
@@ -49,20 +50,19 @@ export default function TeacherAddStudent() {
         setMessage('')
         setCreatedUser(null)
 
-        if (!username || !teacherId || !school || !classroom_id) {
-            setMessage('لطفاً تمام فیلدها را وارد کنید.')
+        if (!username || !firstName || !lastName || !teacherId || !school || !classroom_id) {
+            setMessage('❌ لطفاً تمام فیلدها را وارد کنید.')
             setLoading(false)
             return
         }
 
-        // Check username uniqueness in students table
         const { data: existingStudent } = await supabase
             .from('students')
             .select('id')
             .eq('username', username)
-            .maybeSingle();
+            .maybeSingle()
         if (existingStudent) {
-            setMessage('این نام کاربری قبلاً ثبت شده است. لطفاً نام کاربری دیگری انتخاب کنید.')
+            setMessage('❌ این نام کاربری قبلاً ثبت شده است. لطفاً نام کاربری دیگری انتخاب کنید.')
             setLoading(false)
             return
         }
@@ -74,7 +74,6 @@ export default function TeacherAddStudent() {
 
         const email = `${username}@arcade.dev`
 
-        // Step 1: Create Auth user with role: student
         const { data: auth, error: authError } = await supabase.auth.admin.createUser({
             email,
             password: finalPassword,
@@ -83,14 +82,13 @@ export default function TeacherAddStudent() {
         })
 
         if (authError) {
-            setMessage(`خطا در ایجاد حساب: ${authError.message}`)
+            setMessage(`❌ خطا در ایجاد حساب: ${authError.message}`)
             setLoading(false)
             return
         }
 
         const authId = auth.user.id
 
-        // Step 2: Insert into students table with id = authId
         const { error: dbError } = await supabase.from('students').insert({
             id: authId,
             username,
@@ -99,14 +97,15 @@ export default function TeacherAddStudent() {
             teacher_id: teacherId,
             school,
             classroom_id,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
             login_streak: 0,
             last_login: null
         })
 
         if (dbError) {
-            // Clean up orphaned Auth user
             await supabase.auth.admin.deleteUser(authId)
-            setMessage(`خطا در ثبت اطلاعات دانش‌آموز: ${dbError.message}`)
+            setMessage(`❌ خطا در ثبت اطلاعات دانش‌آموز: ${dbError.message}`)
             setLoading(false)
             return
         }
@@ -114,6 +113,8 @@ export default function TeacherAddStudent() {
         setCreatedUser({ username, password: finalPassword })
         setUsername('')
         setPassword('')
+        setFirstName('')
+        setLastName('')
         setSchool('')
         setClassroomId('')
         setLoading(false)
@@ -157,6 +158,22 @@ export default function TeacherAddStudent() {
                     fullWidth
                     value={username}
                     onChange={(e) => setUsername(e.target.value.trim())}
+                    margin="normal"
+                />
+
+                <TextField
+                    label="نام"
+                    fullWidth
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    margin="normal"
+                />
+
+                <TextField
+                    label="نام خانوادگی"
+                    fullWidth
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     margin="normal"
                 />
 

@@ -56,28 +56,110 @@ cd english-arcade
 npm install
 ```
 
-### 3. **Configure Supabase**
-- Create a `.env` file in the root:
+### 3. **Configure Environment Variables**
+- Copy `env.example` to `.env`:
+  ```bash
+  cp env.example .env
   ```
-  VITE_SUPABASE_URL=your-supabase-url
+- Update the `.env` file with your Supabase credentials:
+  ```
+  VITE_SUPABASE_URL=your-supabase-project-url
   VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
   ```
-- Set up your Supabase project with the required tables and RLS policies (see `supabase_fixes.sql`).
 
-### 4. **Run the App Locally**
+### 4. **Set Up Supabase Database**
+- Run the SQL migrations in order:
+  1. `supabase/migrations/20250713130647_remote_schema.sql`
+  2. `supabase/migrations/20250717000000_fix_students_classroom_schema.sql`
+  3. `supabase/migrations/20250717000001_add_cascade_deletes.sql`
+
+### 5. **Deploy Edge Functions**
+```bash
+supabase functions deploy create_students
+supabase functions deploy add_student_to_class
+```
+
+### 6. **Run the App Locally**
 ```bash
 npm run dev
 ```
 Visit [http://localhost:5173](http://localhost:5173) in your browser.
 
-### 5. **Build for Production**
+### 7. **Build for Production**
 ```bash
 npm run build
 ```
 
-### 6. **Deploy**
+### 8. **Deploy**
 - Static hosting (e.g., Vercel, Netlify, GitHub Pages) is supported.
 - Make sure the `public/games/` directory is served at `/games/` for static game files.
+
+## 🔧 Development
+
+### Code Quality
+- Run linting: `npm run lint`
+- Format code: Use your editor's formatter
+- Follow the existing code style
+
+### Testing
+- Add tests for new features
+- Run tests: `npm test` (when implemented)
+
+### Database Changes
+- Create new migrations in `supabase/migrations/`
+- Test migrations locally before deploying
+- Update RLS policies as needed
+
+## 🚀 Performance Optimizations
+
+### Build Optimizations
+- Code splitting implemented
+- Vendor chunks separated
+- Terser minification enabled
+- Console logs removed in production
+
+### Runtime Optimizations
+- Error boundaries for crash protection
+- Loading states for better UX
+- Session management with timeouts
+- Input validation and sanitization
+
+## 🔒 Security Features
+
+### Authentication
+- Session timeout (1 hour default)
+- Activity monitoring
+- Secure logout handling
+- Input sanitization
+
+### Data Protection
+- RLS policies for all tables
+- Foreign key constraints
+- Audit logging
+- Rate limiting utilities
+
+## 📊 Monitoring
+
+### Error Tracking
+- Error boundaries catch unhandled errors
+- Console logging for debugging
+- Audit logs for database changes
+
+### Performance Monitoring
+- Bundle size optimization
+- Code splitting
+- Lazy loading ready
+
+## 🐛 Troubleshooting
+
+### Common Issues
+1. **Environment variables missing**: Check `.env` file exists and has correct values
+2. **Database connection failed**: Verify Supabase URL and keys
+3. **RLS policies blocking access**: Check user permissions and policies
+4. **Edge functions failing**: Check function logs in Supabase dashboard
+
+### Debug Mode
+Set `VITE_ENABLE_DEBUG_MODE=true` in your `.env` file for additional logging.
 
 ---
 

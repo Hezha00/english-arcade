@@ -134,12 +134,14 @@ export default function Classrooms() {
         }))
 
         const payload = {
-            teacher_id: teacherId,
-            classroom: classroom.trim(), // must match function param
+            auth_id: teacherId, // ✅ Supabase user ID used for upsert
+            teacher_id: teacherId, // ✅ still used for classroom/student linking
+            classroom: classroom.trim(),
             school: school.trim(),
             year_level: yearLevel.trim(),
             students: studentData,
         }
+
         console.log('create_students payload:', payload)
 
         const { data, error } = await supabase.functions.invoke('create_students', {
